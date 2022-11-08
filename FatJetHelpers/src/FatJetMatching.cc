@@ -539,6 +539,17 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
     }
   }
 
+  int num_h_A0 = 0;
+  if (higgs->numberOfDaughters() == 2) {
+    for (const auto &p : higgs->daughterRefVector()){
+      auto pdgid = std::abs(p->pdgId());
+      if (pdgid == ParticleID::p_A0){
+        num_h_A0 += 1;
+      }
+    }
+  }
+  bool is_hAA = (num_h_A0 == 2);
+
   if (is_hVV){
     // h->WW or h->ZZ
     std::vector<const reco::GenParticle*> hVV_daus;
@@ -574,6 +585,40 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
       return std::make_pair(FatJetLabel::H_qqqq, higgs);
     }
 
+  }else if (is_hAA){
+    std::vector<const reco::GenParticle*> hAA_daus;
+    for (unsigned idau=0; idau<higgs->numberOfDaughters(); ++idau){
+      const auto *dau = dynamic_cast<const reco::GenParticle*>(higgs->daughter(idau));
+      for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
+	auto pdgid = std::abs(dau->daughter(jdau)->pdgId());
+	if (pdgid == ParticleID::p_b){
+	  hAA_daus.push_back(dau);
+	}
+      }
+    }
+
+    if (debug_){
+      using namespace std;
+      cout << "Found " << hAA_daus.size() << " bs from Higgs decay" << endl;
+      for (const auto * gp : hAA_daus){
+        using namespace std;
+        printGenParticleInfo(gp, -1);
+        cout << " ... dR(b, jet) = " << reco::deltaR(*gp, *jet) << endl;
+      }
+    }
+
+    unsigned n_bs_in_jet = 0;
+    for (const auto *gp : hAA_daus){
+      auto dr = reco::deltaR(*gp, *jet);
+      if (dr < distR){
+        ++n_bs_in_jet;
+      }
+    }
+    if (n_bs_in_jet == 4){
+      return std::make_pair(FatJetLabel::H_aa_bbbb, higgs);
+    }else{
+      return std::make_pair(FatJetLabel::H_aa_other, higgs);
+    }
   }else if (isHadronic(higgs)) {
     // direct h->qq
 

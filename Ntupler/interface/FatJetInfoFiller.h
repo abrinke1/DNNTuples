@@ -39,6 +39,7 @@ private:
   FatJetMatching fjmatch_;
   bool useReclusteredJets_ = false;
   bool isQCDSample_ = false;
+  std::string sampleType_ = "";
   bool isTrainSample_ = false;
 
   bool sample_use_pythia_ = false;

@@ -16,6 +16,7 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   fjTagInfoName = iConfig.getParameter<std::string>("fjTagInfoName");
   useReclusteredJets_ = iConfig.getParameter<bool>("useReclusteredJets");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
+  sampleType_ = iConfig.getParameter<std::string>("sampleType");
   sample_use_pythia_ = iConfig.getParameter<bool>("isPythia");
   sample_use_herwig_ = iConfig.getParameter<bool>("isHerwig");
   sample_use_madgraph_ = iConfig.getParameter<bool>("isMadGraph");
@@ -58,12 +59,17 @@ void FatJetInfoFiller::book() {
   data.add<int>("label_H_qq",    0);
   data.add<int>("label_H_qqqq",  0);
   data.add<int>("label_H_tautau",0);
+  data.add<int>("label_H_aa_bbbb",  0);
+  data.add<int>("label_H_aa_other", 0);
 
   data.add<int>("label_QCD_bb",  0);
   data.add<int>("label_QCD_cc",  0);
   data.add<int>("label_QCD_b",   0);
   data.add<int>("label_QCD_c",   0);
   data.add<int>("label_QCD_others", 0);
+  data.add<int>("label_QCD_BGen", 0);
+  data.add<int>("label_QCD_bEnr", 0);
+  data.add<int>("label_QCD_Incl", 0);
 
   data.add<int>("sample_isQCD", 0);
   data.add<int>("sample_use_pythia", 0);
@@ -241,12 +247,17 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("label_H_qq",    fjlabel.first == FatJetMatching::H_qq);
   data.fill<int>("label_H_qqqq",  fjlabel.first == FatJetMatching::H_qqqq);
   data.fill<int>("label_H_tautau",fjlabel.first == FatJetMatching::H_tautau);
+  data.fill<int>("label_H_aa_bbbb",  fjlabel.first == FatJetMatching::H_aa_bbbb);
+  data.fill<int>("label_H_aa_other", fjlabel.first == FatJetMatching::H_aa_other);
 
   data.fill<int>("label_QCD_bb",  fjlabel.first == FatJetMatching::QCD_bb);
   data.fill<int>("label_QCD_cc",  fjlabel.first == FatJetMatching::QCD_cc);
   data.fill<int>("label_QCD_b",   fjlabel.first == FatJetMatching::QCD_b);
   data.fill<int>("label_QCD_c",   fjlabel.first == FatJetMatching::QCD_c);
   data.fill<int>("label_QCD_others", fjlabel.first == FatJetMatching::QCD_others);
+  data.fill<int>("label_QCD_BGen", sampleType_ == "QCD_BGen");
+  data.fill<int>("label_QCD_bEnr", sampleType_ == "QCD_bEnr");
+  data.fill<int>("label_QCD_Incl", sampleType_ == "QCD_Incl");
 
   data.fill<int>("sample_isQCD",  isQCDSample_);
   data.fill<int>("sample_use_pythia", sample_use_pythia_);
