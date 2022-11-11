@@ -11,3 +11,13 @@ cmsenv
 git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b prod/UL/10_6_X_MiniAODv2
 cd DeepNTuples
 git checkout -b AWB_Hto4b_dev
+
+git remote add abrinke1 git@github.com:abrinke1/DNNTuples.git
+git add file_names
+git commit -m "message"
+git push abrinke1 AWB_Hto4b_dev
+
+cmsenv
+voms-proxy-init --voms cms
+cd Ntupler/
+cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=HToAATo4B_GluGluH_01J_Pt150_M-20 maxEvents=1000
