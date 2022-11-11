@@ -94,6 +94,10 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_gen_mass", 0);
   data.add<float>("fj_gen_deltaR", 999);
 
+  // specific gen info for H --> aa --> bbbb decay
+  data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
+
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
   data.add<float>("fj_genOverReco_pt", 1); // default to 1 if not gen-matched
@@ -264,6 +268,29 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("sample_use_herwig", sample_use_herwig_);
   data.fill<int>("sample_use_madgraph", sample_use_madgraph_); // MG can be interfaced w/ either pythia or herwig
 
+  // specific gen info for H --> aa --> bbbb decay
+  // matching code taken from FatJetHelpers/src/FatJetMatching.cc
+  double H_aa_bbbb_dR_max_b = -0.1;
+  double H_aa_bbbb_pt_min_b = 9999;
+  if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
+    for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
+      const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
+      for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
+	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
+	auto pdgid = std::abs(gdau->pdgId());
+	if (pdgid == ParticleID::p_b){
+	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
+	    H_aa_bbbb_pt_min_b = gdau->pt();
+	  }
+	  if (reco::deltaR(*gdau, jet.p4()) > H_aa_bbbb_dR_max_b) {
+	    H_aa_bbbb_dR_max_b = reco::deltaR(*gdau, jet.p4());
+	  }
+	}
+      }
+    }
+  }
+  data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
+  data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
 
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
