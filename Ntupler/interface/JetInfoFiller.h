@@ -42,6 +42,9 @@ private:
   double minPt_ = 0;
   double maxPt_ = 0;
   double maxAbsEta_ = 0;
+  double minMass_ = 0;
+  double maxMass_ = 0;
+  double minXbbvsQCD_ = 0;
   std::vector<std::string> btag_discriminators_;
 
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;

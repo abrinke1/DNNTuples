@@ -16,6 +16,9 @@ void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCo
   minPt_ = iConfig.getUntrackedParameter<double>("jetPtMin", 150);
   maxPt_ = iConfig.getUntrackedParameter<double>("jetPtMax", -1);
   maxAbsEta_ = iConfig.getUntrackedParameter<double>("jetAbsEtaMax", 2.4);
+  minMass_ = iConfig.getUntrackedParameter<double>("jetMassMin", -1);
+  maxMass_ = iConfig.getUntrackedParameter<double>("jetMassMax", -1);
+  minXbbvsQCD_ = iConfig.getUntrackedParameter<double>("jetXbbvsQCDMin", -1);
   btag_discriminators_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminators");
 
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
@@ -39,9 +42,20 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
   if (vertices->empty()) return false;
 
   // jet selection
-  if (jet.pt() < minPt_) return false;
+  if (minPt_ > 0 && jet.pt() < minPt_) return false;
   if (maxPt_ > 0 && jet.pt() > maxPt_) return false;
   if (std::abs(jet.eta()) > maxAbsEta_) return false;
+  if (minMass_ > 0 && jet.mass() < minMass_) return false;
+  if (maxMass_ > 0 && jet.mass() > maxMass_) return false;
+  if (minXbbvsQCD_ > 0) {
+    for(const auto& disc : btag_discriminators_) {
+      std::string name(disc);
+      if (name == "pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XbbvsQCD") {
+	if (jet.bDiscriminator(disc) < minXbbvsQCD_) return false;
+	break;
+      }
+    }
+  }
 
   // event information
   data.fill<unsigned>("event_no", event_);
