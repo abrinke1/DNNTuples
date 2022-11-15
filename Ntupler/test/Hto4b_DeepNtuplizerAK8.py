@@ -1,5 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 import os
+import sys
 import math
 
 # ---------------------------------------------------------
@@ -13,14 +14,27 @@ options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.
 options.register('inputDataset', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "Input dataset")
 options.register('isTrainSample', True, VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool, "if the sample is used for training")
+options.register('fileIndex', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "Single file index")
 
 options.parseArguments()
 
+in_file_list = []
 with open(os.getcwd()+'/test/lists/'+options.inputDataset+'.txt') as list_file:
-    options.inputFiles = [f for f in list_file.read().splitlines() if not f.startswith('#')]
-print '\nGot %d input files from %s' % (len(options.inputFiles), options.inputDataset)
+    in_file_list = [f for f in list_file.read().splitlines() if not f.startswith('#')]
+print '\nGot %d input files from %s' % (len(in_file_list), 'test/lists/'+options.inputDataset+'.txt')
+if options.fileIndex >= 0:
+    in_file_list = [in_file_list[options.fileIndex]]
+    print '\nWill only run on file %d:' % options.fileIndex
+    print in_file_list[0]
 
-options.outputFile = 'output/AK8_'+options.inputDataset+'.root'
+options.inputFiles = in_file_list
+
+# out_dir = os.getcwd()+'/output/'
+out_dir = '/cms/data/store/user/abrinke1/Trees/HtoAAto4B/ParticleNet/Ntuples/2022_11_14/'
+out_str = out_dir+'AK8_'+options.inputDataset
+if options.fileIndex >= 0:
+    out_str += ('_file_%03d' % options.fileIndex)
+options.outputFile = out_str+'.root'
 
 globalTagMap = {
     'auto': 'auto:phase1_2018_realistic',
@@ -163,7 +177,7 @@ from RecoJets.JetProducers.ak8GenJets_cfi import ak8GenJets
 process.ak8GenJetsWithNu = ak8GenJets.clone(
     src='packedGenParticles',
     rParam=cms.double(jetR),
-    jetPtMin=50.0
+    jetPtMin=100.0
 )
 process.ak8GenJetsWithNuSoftDrop = process.ak8GenJetsWithNu.clone(
     useSoftDrop=cms.bool(True),
@@ -219,11 +233,21 @@ process.deepntuplizer.jetXbbvsQCDMin = 0.1
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
 
-process.deepntuplizer.isQCDSample = ('/QCD_' in options.inputDataset or 'QCD_' in options.inputFiles[0])
-process.deepntuplizer.sampleType = ('QCD_BGen' if 'QCD_BGen' in options.inputFiles[0] else \
-                                    ('QCD_bEnr' if 'QCD_bEnr' in options.inputFiles[0] else \
-                                     ('QCD_Incl' if 'QCD_Incl' in options.inputFiles[0] else '') ) )
-print '\nisQCDSample = %s, sampleType = %s\n' % (str(process.deepntuplizer.isQCDSample), process.deepntuplizer.sampleType)
+isQCD = ('/QCD_' in options.inputDataset or 'QCD_' in options.inputFiles[0])
+isHto4b = ('HToAATo4B_' in options.inputDataset or 'HToAATo4B_' in options.inputFiles[0])
+process.deepntuplizer.isQCDSample = isQCD
+if isQCD:
+    process.deepntuplizer.sampleType = ('QCD_BGen' if 'QCD_BGen' in options.inputFiles[0] else \
+                                        ('QCD_bEnr' if 'QCD_bEnr' in options.inputFiles[0] else \
+                                         ('QCD_Incl' if 'QCD_Incl' in options.inputFiles[0] else '') ) )
+    process.deepntuplizer.minLheHT = cms.double(int(options.inputFiles[0].split('_HT')[1].split('00')[0]+'00'))
+elif isHto4b:
+    process.deepntuplizer.sampleType = ('H_aa_bbbb_'+options.inputFiles[0].split('_TuneCP5')[0][-4:])
+
+print '\nisQCDSample = %s, sampleType = %s, minLheHT = %s\n' % (str(process.deepntuplizer.isQCDSample),
+                                                                process.deepntuplizer.sampleType,
+                                                                process.deepntuplizer.minLheHT)
+
 process.deepntuplizer.isPythia = 'pythia' in options.inputDataset.lower()
 process.deepntuplizer.isHerwig = 'herwig' in options.inputDataset.lower()
 # note: MG can be interfaced w/ either pythia or herwig

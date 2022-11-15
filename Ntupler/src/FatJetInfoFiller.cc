@@ -17,6 +17,7 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   useReclusteredJets_ = iConfig.getParameter<bool>("useReclusteredJets");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   sampleType_ = iConfig.getParameter<std::string>("sampleType");
+  min_LHE_HT_ = int(iConfig.getParameter<double>("minLheHT"));
   sample_use_pythia_ = iConfig.getParameter<bool>("isPythia");
   sample_use_herwig_ = iConfig.getParameter<bool>("isHerwig");
   sample_use_madgraph_ = iConfig.getParameter<bool>("isMadGraph");
@@ -72,6 +73,7 @@ void FatJetInfoFiller::book() {
   data.add<int>("label_QCD_Incl", 0);
 
   data.add<int>("sample_isQCD", 0);
+  data.add<int>("sample_min_LHE_HT", -1);
   data.add<int>("sample_use_pythia", 0);
   data.add<int>("sample_use_herwig", 0);
   data.add<int>("sample_use_madgraph", 0);
@@ -95,6 +97,7 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_gen_deltaR", 999);
 
   // specific gen info for H --> aa --> bbbb decay
+  data.add<float>("fj_gen_H_aa_bbbb_mass_a",   -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
   data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
 
@@ -264,17 +267,20 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("label_QCD_Incl", sampleType_ == "QCD_Incl");
 
   data.fill<int>("sample_isQCD",  isQCDSample_);
+  data.fill<int>("sample_min_LHE_HT", min_LHE_HT_);
   data.fill<int>("sample_use_pythia", sample_use_pythia_);
   data.fill<int>("sample_use_herwig", sample_use_herwig_);
   data.fill<int>("sample_use_madgraph", sample_use_madgraph_); // MG can be interfaced w/ either pythia or herwig
 
   // specific gen info for H --> aa --> bbbb decay
   // matching code taken from FatJetHelpers/src/FatJetMatching.cc
+  double H_aa_bbbb_mass_a   = -1.0;
   double H_aa_bbbb_dR_max_b = -0.1;
   double H_aa_bbbb_pt_min_b = 9999;
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
+      H_aa_bbbb_mass_a = dau->mass();
       for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
 	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
 	auto pdgid = std::abs(gdau->pdgId());
@@ -289,6 +295,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       }
     }
   }
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a",   H_aa_bbbb_mass_a);
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
   data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
 

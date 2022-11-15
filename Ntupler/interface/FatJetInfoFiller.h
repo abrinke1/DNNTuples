@@ -40,6 +40,7 @@ private:
   bool useReclusteredJets_ = false;
   bool isQCDSample_ = false;
   std::string sampleType_ = "";
+  int  min_LHE_HT_ = 0;
   bool isTrainSample_ = false;
 
   bool sample_use_pythia_ = false;
