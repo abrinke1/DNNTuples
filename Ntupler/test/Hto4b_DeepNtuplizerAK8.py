@@ -237,9 +237,9 @@ isQCD = ('/QCD_' in options.inputDataset or 'QCD_' in options.inputFiles[0])
 isHto4b = ('HToAATo4B_' in options.inputDataset or 'HToAATo4B_' in options.inputFiles[0])
 process.deepntuplizer.isQCDSample = isQCD
 if isQCD:
-    process.deepntuplizer.sampleType = ('QCD_BGen' if 'QCD_BGen' in options.inputFiles[0] else \
-                                        ('QCD_bEnr' if 'QCD_bEnr' in options.inputFiles[0] else \
-                                         ('QCD_Incl' if 'QCD_Incl' in options.inputFiles[0] else '') ) )
+    process.deepntuplizer.sampleType = ('QCD_BGen' if 'BGenFilter' in options.inputFiles[0] else \
+                                        ('QCD_bEnr' if 'bEnriched' in options.inputFiles[0] else \
+                                         'QCD_Incl') )
     process.deepntuplizer.minLheHT = cms.double(int(options.inputFiles[0].split('_HT')[1].split('00')[0]+'00'))
 elif isHto4b:
     process.deepntuplizer.sampleType = ('H_aa_bbbb_'+options.inputFiles[0].split('_TuneCP5')[0][-4:])
