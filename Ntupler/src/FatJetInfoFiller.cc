@@ -9,6 +9,9 @@
 #include <string>
 #include <algorithm>
 
+#include <iostream>
+#include <typeinfo>
+
 namespace deepntuples {
 
 void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
@@ -97,9 +100,11 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_gen_deltaR", 999);
 
   // specific gen info for H --> aa --> bbbb decay
-  data.add<float>("fj_gen_H_aa_bbbb_mass_a",   -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_a1", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_a2", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
   data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_H", -1.0); 
 
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
@@ -274,17 +279,33 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   // specific gen info for H --> aa --> bbbb decay
   // matching code taken from FatJetHelpers/src/FatJetMatching.cc
-  double H_aa_bbbb_mass_a   = -1.0;
-  double H_aa_bbbb_dR_max_b = -0.1;
-  double H_aa_bbbb_pt_min_b = 9999;
+  double H_aa_bbbb_mass_a1   = -1.0;
+  double H_aa_bbbb_mass_a2   = -1.0;
+  double H_aa_bbbb_dR_max_b  = -0.1;
+  double H_aa_bbbb_pt_min_b  = 9999;
+  // double H_aa_bbbb_mass_H    = 9999;
+  double bm[2] = {9999,9999}; 
+  double bpt[2] = {9999, 9999}; 
+  double am[2] = {9999, 9999};
+  double apt[2] = {9999, 9999};
+
+  // double bm3 = 9999;
+  // double bm4 = 9999; 
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
-      H_aa_bbbb_mass_a = dau->mass();
+      H_aa_bbbb_mass_a1 = dau->mass();
+      std::cout << "--------------\n";
       for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
 	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
 	auto pdgid = std::abs(gdau->pdgId());
 	if (pdgid == ParticleID::p_b){
+
+
+	  bm[jdau] = gdau->mass();
+	  bpt[jdau] = gdau->pt();
+      
+
 	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
 	    H_aa_bbbb_pt_min_b = gdau->pt();
 	  }
@@ -292,10 +313,19 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	    H_aa_bbbb_dR_max_b = reco::deltaR(*gdau, jet.p4());
 	  }
 	}
+	
+	// the mass and pt should have been filled already with the two values 
+	std::cout << bm[0] << bm[1] << endl;
+	// calculate a_mass and a_pt, then fill the a array. 
+	// E_a = E_b1 + E_b2                                     conserve energy 
+	// M_a^2 = M_b1^2 + M_b2^2 + E_b1*E_b2 - p_b1.p_b2       conserve momentum
+	// p_a^2 = E_a^2 - M_a^2                                 
+	
+
       }
     }
   }
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a",   H_aa_bbbb_mass_a);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   H_aa_bbbb_mass_a1);
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
   data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
 
