@@ -9,8 +9,10 @@
 #include <string>
 #include <algorithm>
 
+
 #include <iostream>
 #include <typeinfo>
+#include <Math/Vector4D.h>
 
 namespace deepntuples {
 
@@ -222,7 +224,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   }
 
   // ----------------------------------------------------------------
-//  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
+  //  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
   auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, jetR_);
 
   data.fill<int>("fj_label", fjlabel.first);
@@ -284,33 +286,33 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   double H_aa_bbbb_dR_max_b  = -0.1;
   double H_aa_bbbb_pt_min_b  = 9999;
   // double H_aa_bbbb_mass_H    = 9999;
-  double bm[2] = {9999,9999}; 
-  double bpt[2] = {9999, 9999}; 
-  double be[2] = {9999,9999};
-  double beta[2] = {-0.1, -0.1};
-  double bphi[2] = {-0.1, -0.1};
-  double am[2] = {9999, 9999};
-  double apt[2] = {9999, 9999};
-  double ae[2] = {9999,9999};
-  double dOmega = 0; 
-  // double bm3 = 9999;
-  // double bm4 = 9999; 
+
+  
+
+  // OK SI FORGET ALL OF THAT JUST USE LORENTZVECTORS IN ROOT 
+  // TO CALCULATE THE PARENT INFO FROM THE CHILD 
+  // declare the tlozentz vectors of the b, then the a, and H 
+  // can i make an array of tlorezntz vectors 
+  ROOT::Math::PtEtaPhiMVector bb[2];
+  ROOT::Math::PtEtaPhiMVector aa[2]; 
+  ROOT::Math::PtEtaPhiMVector H; 
+
+
+
+
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
       H_aa_bbbb_mass_a1 = dau->mass();
-      std::cout << "--------------\n";
       for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
 	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
 	auto pdgid = std::abs(gdau->pdgId());
 	if (pdgid == ParticleID::p_b){
 
 
-	  bm[jdau] = gdau->mass();
-	  bpt[jdau] = gdau->pt();
-	  be[jdau] = gdau->et();
-	  beta[jdau] = gdau->eta();
-	  bphi[jdau] = gdau->phi();
+	  // make the tlorentz vector of the two b here. use jdau
+	  bb[jdau].SetCoordinates(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass());
+	    
 
 	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
 	    H_aa_bbbb_pt_min_b = gdau->pt();
@@ -320,26 +322,21 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	  }
 	}
       }
-      // the mass and pt should have been filled already with the two values 
-      // calculate a_mass and a_pt, then fill the a array. 
-      // E_a = E_b1 + E_b2                                     conserve energy 
-      ae[idau] = be[0] + be[1];
-     
-      // M_a^2 = M_b1^2 + M_b2^2 + E_b1*E_b2 - p_b1.p_b2       conserve momentum
-      // the p_b1.p_b2 needs the eta/phi of the two particles ugh
-      dOmega = 
 
 
-      // p_a^2 = E_a^2 - M_a^2
-
-
-      std::cout << ae[0] << apt[0] << am[0] << std::endl;
+      // use info from the two b to fill in the tlorentz vector of a. use idau 
+      aa[idau] = bb[0] + bb[1];
+ 
      
     }
   }
+  H = aa[0] + aa[1];
+
   data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   H_aa_bbbb_mass_a1);
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
   data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", aa[0].M());
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", H.M());
 
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
