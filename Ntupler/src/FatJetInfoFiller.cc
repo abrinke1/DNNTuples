@@ -286,9 +286,13 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // double H_aa_bbbb_mass_H    = 9999;
   double bm[2] = {9999,9999}; 
   double bpt[2] = {9999, 9999}; 
+  double be[2] = {9999,9999};
+  double beta[2] = {-0.1, -0.1};
+  double bphi[2] = {-0.1, -0.1};
   double am[2] = {9999, 9999};
   double apt[2] = {9999, 9999};
-
+  double ae[2] = {9999,9999};
+  double dOmega = 0; 
   // double bm3 = 9999;
   // double bm4 = 9999; 
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
@@ -304,7 +308,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
 	  bm[jdau] = gdau->mass();
 	  bpt[jdau] = gdau->pt();
-      
+	  be[jdau] = gdau->et();
+	  beta[jdau] = gdau->eta();
+	  bphi[jdau] = gdau->phi();
 
 	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
 	    H_aa_bbbb_pt_min_b = gdau->pt();
@@ -313,16 +319,22 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	    H_aa_bbbb_dR_max_b = reco::deltaR(*gdau, jet.p4());
 	  }
 	}
-	
-	// the mass and pt should have been filled already with the two values 
-	std::cout << bm[0] << bm[1] << endl;
-	// calculate a_mass and a_pt, then fill the a array. 
-	// E_a = E_b1 + E_b2                                     conserve energy 
-	// M_a^2 = M_b1^2 + M_b2^2 + E_b1*E_b2 - p_b1.p_b2       conserve momentum
-	// p_a^2 = E_a^2 - M_a^2                                 
-	
-
       }
+      // the mass and pt should have been filled already with the two values 
+      // calculate a_mass and a_pt, then fill the a array. 
+      // E_a = E_b1 + E_b2                                     conserve energy 
+      ae[idau] = be[0] + be[1];
+     
+      // M_a^2 = M_b1^2 + M_b2^2 + E_b1*E_b2 - p_b1.p_b2       conserve momentum
+      // the p_b1.p_b2 needs the eta/phi of the two particles ugh
+      dOmega = 
+
+
+      // p_a^2 = E_a^2 - M_a^2
+
+
+      std::cout << ae[0] << apt[0] << am[0] << std::endl;
+     
     }
   }
   data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   H_aa_bbbb_mass_a1);
