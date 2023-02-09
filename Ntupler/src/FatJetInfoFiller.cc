@@ -107,6 +107,7 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
   data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
   data.add<float>("fj_gen_H_aa_bbbb_mass_H", -1.0); 
+  data.add<float>("fj_gen_H_aa_bbbb_mass_H_calc", -1.0);
 
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
@@ -285,7 +286,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   double H_aa_bbbb_mass_a2   = -1.0;
   double H_aa_bbbb_dR_max_b  = -0.1;
   double H_aa_bbbb_pt_min_b  = 9999;
-  // double H_aa_bbbb_mass_H    = 9999;
+  double H_aa_bbbb_mass_H    = 9999;
 
   
 
@@ -301,9 +302,10 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
 
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
+    H_aa_bbbb_mass_H =  fjlabel.second->mass();
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
-      H_aa_bbbb_mass_a1 = dau->mass();
+      // H_aa_bbbb_mass_a1 = dau->mass(); // this is the read out mass. We will use calculated mass instead
       for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
 	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
 	auto pdgid = std::abs(gdau->pdgId());
@@ -332,11 +334,12 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   }
   H = aa[0] + aa[1];
 
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   H_aa_bbbb_mass_a1);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   aa[1].M());
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
   data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
   data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", aa[0].M());
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", H.M());
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_H_calc", H.M());
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", H_aa_bbbb_mass_H);
 
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
