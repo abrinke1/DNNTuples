@@ -286,14 +286,14 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   double H_aa_bbbb_pt_min_b  = 9999;
   double H_aa_bbbb_mass_H    = 9999;
 
-  // OK SI FORGET ALL OF THAT JUST USE LORENTZVECTORS IN ROOT 
-  // TO CALCULATE THE PARENT INFO FROM THE CHILD 
   // declare the tlozentz vectors of the b, then the a, and H 
-  // can i make an array of tlorezntz vectors 
+  // initialize the a vectors to 0 
   ROOT::Math::PtEtaPhiMVector bb[2];
   ROOT::Math::PtEtaPhiMVector aa[2]; 
-  ROOT::Math::PtEtaPhiMVector H; 
-
+  ROOT::Math::PtEtaPhiMVector H(0,0,0,0); 
+  aa[0].SetCoordinates(-1,-1,-1,-1);
+  aa[1].SetCoordinates(-1,-1,-1,-1);
+  
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
     H_aa_bbbb_mass_H =  fjlabel.second->mass();
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
@@ -315,18 +315,17 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	  }
 	}
       }
-
       // use info from the two b to fill in the tlorentz vector of a. use idau 
       aa[idau] = bb[0] + bb[1];
     }
+    H = aa[0] + aa[1];
   }
-  H = aa[0] + aa[1];
 
 
   // bigger mass is a1, smaller mass is a2 
   double a1 = ( aa[0].M() > aa[1].M() ) ? aa[0].M():aa[1].M(); 
   double a2 = ( aa[0].M() < aa[1].M() ) ? aa[0].M():aa[1].M();
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   a1);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1", a1);
   data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", a2);
 
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
