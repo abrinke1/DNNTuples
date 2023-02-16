@@ -282,13 +282,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   // specific gen info for H --> aa --> bbbb decay
   // matching code taken from FatJetHelpers/src/FatJetMatching.cc
-  double H_aa_bbbb_mass_a1   = -1.0;
-  double H_aa_bbbb_mass_a2   = -1.0;
   double H_aa_bbbb_dR_max_b  = -0.1;
   double H_aa_bbbb_pt_min_b  = 9999;
   double H_aa_bbbb_mass_H    = 9999;
-
-  
 
   // OK SI FORGET ALL OF THAT JUST USE LORENTZVECTORS IN ROOT 
   // TO CALCULATE THE PARENT INFO FROM THE CHILD 
@@ -297,9 +293,6 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   ROOT::Math::PtEtaPhiMVector bb[2];
   ROOT::Math::PtEtaPhiMVector aa[2]; 
   ROOT::Math::PtEtaPhiMVector H; 
-
-
-
 
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
     H_aa_bbbb_mass_H =  fjlabel.second->mass();
@@ -311,11 +304,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	auto pdgid = std::abs(gdau->pdgId());
 	if (pdgid == ParticleID::p_b){
 
-
 	  // make the tlorentz vector of the two b here. use jdau
 	  bb[jdau].SetCoordinates(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass());
 	    
-
 	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
 	    H_aa_bbbb_pt_min_b = gdau->pt();
 	  }
@@ -325,19 +316,21 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	}
       }
 
-
       // use info from the two b to fill in the tlorentz vector of a. use idau 
       aa[idau] = bb[0] + bb[1];
- 
-     
     }
   }
   H = aa[0] + aa[1];
 
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   aa[1].M());
+
+  // bigger mass is a1, smaller mass is a2 
+  double a1 = ( aa[0].M() > aa[1].M() ) ? aa[0].M():aa[1].M(); 
+  double a2 = ( aa[0].M() < aa[1].M() ) ? aa[0].M():aa[1].M();
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1",   a1);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", a2);
+
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
   data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", aa[0].M());
   data.fill<float>("fj_gen_H_aa_bbbb_mass_H_calc", H.M());
   data.fill<float>("fj_gen_H_aa_bbbb_mass_H", H_aa_bbbb_mass_H);
 
