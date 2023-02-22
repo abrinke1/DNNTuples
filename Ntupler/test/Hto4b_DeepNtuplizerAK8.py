@@ -30,7 +30,7 @@ if options.fileIndex >= 0:
 options.inputFiles = in_file_list
 
 # out_dir = os.getcwd()+'/output/'
-out_dir = '/cms/data/store/user/abrinke1/Trees/HtoAAto4B/ParticleNet/Ntuples/2022_11_14/'
+out_dir = '/home/chosila/Projects/CMSSW_10_6_32/src/DeepNTuples/Ntuples/'
 out_str = out_dir+'AK8_'+options.inputDataset
 if options.fileIndex >= 0:
     out_str += ('_file_%03d' % options.fileIndex)
