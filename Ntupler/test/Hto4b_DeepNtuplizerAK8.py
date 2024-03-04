@@ -146,7 +146,7 @@ if useReclusteredJets:
 
     from DeepNTuples.Ntupler.jetToolbox_cff import jetToolbox
     jetToolbox(process, 'ak8', 'dummySeq', 'noOutput', PUMethod='Puppi', JETCorrPayload='AK8PFPuppi',
-               JETCorrLevels=JETCorrLevels, Cut='pt > 170.0 && abs(rapidity()) < 2.4', runOnMC=True, addNsub=True,
+               JETCorrLevels=JETCorrLevels, Cut='pt > 170.0 && abs(rapidity()) < 2.4', runOnMC=(not 'JetHT' in options.inputDataset), addNsub=True,
                maxTau=3, addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi',
                subJETCorrLevels=JETCorrLevels, bTagDiscriminators=['pfCombinedInclusiveSecondaryVertexV2BJetTags'],
                subjetBTagDiscriminators=subjetBTagDiscriminators)
@@ -235,14 +235,17 @@ process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
 
 isQCD = ('/QCD_' in options.inputDataset or 'QCD_' in options.inputFiles[0])
 isHto4b = ('HToAATo4B_' in options.inputDataset or 'HToAATo4B_' in options.inputFiles[0])
+isData = ('JetHT' in options.inputDataset)
 process.deepntuplizer.isQCDSample = isQCD
 if isQCD:
     process.deepntuplizer.sampleType = ('QCD_BGen' if 'BGenFilter' in options.inputFiles[0] else \
                                         ('QCD_bEnr' if 'bEnriched' in options.inputFiles[0] else \
                                          'QCD_Incl') )
-    process.deepntuplizer.minLheHT = cms.double(int(options.inputFiles[0].split('_HT')[1].split('00')[0]+'00'))
+    process.deepntuplizer.minLheHT = cms.double(int(options.inputFiles[0].split('_HT')[1].split('00to')[0]+'00'))
 elif isHto4b:
     process.deepntuplizer.sampleType = ('H_aa_bbbb_'+options.inputFiles[0].split('_TuneCP5')[0][-4:])
+elif isData:
+    process.deepntuplizer.sampleType = 'data'
 
 print '\nisQCDSample = %s, sampleType = %s, minLheHT = %s\n' % (str(process.deepntuplizer.isQCDSample),
                                                                 process.deepntuplizer.sampleType,
@@ -260,4 +263,5 @@ if not options.inputDataset:
 #==============================================================================================================================#
 process.p = cms.Path(process.deepntuplizer)
 process.p.associate(patTask)
-process.p.associate(process.genJetTask)
+if not isData:
+    process.p.associate(process.genJetTask)
