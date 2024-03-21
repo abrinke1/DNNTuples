@@ -19,6 +19,7 @@ void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCo
   minMass_ = iConfig.getUntrackedParameter<double>("jetMassMin", -1);
   maxMass_ = iConfig.getUntrackedParameter<double>("jetMassMax", -1);
   minXbbvsQCD_ = iConfig.getUntrackedParameter<double>("jetXbbvsQCDMin", -1);
+  minAvgXbb_ = iConfig.getUntrackedParameter<double>("jetAvgXbbMin", -1);
   btag_discriminators_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminators");
 
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
@@ -55,6 +56,23 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
 	break;
       }
     }
+  }
+  if (minAvgXbb_ > 0) {
+    float PNet_Xbb = -99.;
+    float Tag_ZHbb = -99.;
+    for(const auto& disc : btag_discriminators_) {
+      std::string name(disc);
+      if (name == "pfMassDecorrelatedParticleNetDiscriminatorsJetTags:XbbvsQCD") {
+	PNet_Xbb = jet.bDiscriminator(disc);
+	if (PNet_Xbb < 0) PNet_Xbb = 0;
+      }
+      if (name == "pfMassDecorrelatedDeepBoostedDiscriminatorsJetTags:ZHbbvsQCD") {
+	Tag_ZHbb = jet.bDiscriminator(disc);
+	if (Tag_ZHbb < 0) Tag_ZHbb = 0;
+      }
+      if (PNet_Xbb >= 0 && Tag_ZHbb >= 0) break;
+    }
+    if ((PNet_Xbb + Tag_ZHbb) / 2.0 < minAvgXbb_) return false;
   }
 
   // event information

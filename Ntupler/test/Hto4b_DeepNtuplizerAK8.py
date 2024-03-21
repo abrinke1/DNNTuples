@@ -228,7 +228,7 @@ process.deepntuplizer.useReclusteredJets = useReclusteredJets
 process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
 process.deepntuplizer.jetPtMin = 170
 process.deepntuplizer.jetMassMin = 50
-process.deepntuplizer.jetXbbvsQCDMin = 0.1
+process.deepntuplizer.jetXbbAvgMin = 0.2
 
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'

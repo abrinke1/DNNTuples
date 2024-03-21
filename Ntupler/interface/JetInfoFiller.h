@@ -45,6 +45,7 @@ private:
   double minMass_ = 0;
   double maxMass_ = 0;
   double minXbbvsQCD_ = 0;
+  double minAvgXbb_ = 0;
   std::vector<std::string> btag_discriminators_;
 
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
