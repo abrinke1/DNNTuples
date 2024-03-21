@@ -28,3 +28,8 @@ cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=HToAATo4B_GluGluH_01J_Pt150_M
 ./scripts/submitDeepNtuplizer.sh
 ## After jobs are done and you've checked output
 ./scripts/hadd.sh
+
+## Branches
+HtoAA_PNet_Prod_v1_2023_10_06_AWB_2023_08_31
+  * Used for AWB_2023_08_31 training files in first round of custom NanoAOD production:
+    https://github.com/abrinke1/RecoBTag-Combined/tree/HtoAA_PNet_Prod_v1_2023_10_06_slim
