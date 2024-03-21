@@ -9,6 +9,11 @@
 #include <string>
 #include <algorithm>
 
+
+#include <iostream>
+#include <typeinfo>
+#include <Math/Vector4D.h>
+
 namespace deepntuples {
 
 void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
@@ -97,9 +102,12 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_gen_deltaR", 999);
 
   // specific gen info for H --> aa --> bbbb decay
-  data.add<float>("fj_gen_H_aa_bbbb_mass_a",   -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_a1", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_a2", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
   data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_H", -1.0); 
+  data.add<float>("fj_gen_H_aa_bbbb_mass_H_calc", -1.0);
 
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
@@ -217,7 +225,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   }
 
   // ----------------------------------------------------------------
-//  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
+  //  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
   auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, jetR_);
 
   data.fill<int>("fj_label", fjlabel.first);
@@ -274,17 +282,31 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   // specific gen info for H --> aa --> bbbb decay
   // matching code taken from FatJetHelpers/src/FatJetMatching.cc
-  double H_aa_bbbb_mass_a   = -1.0;
-  double H_aa_bbbb_dR_max_b = -0.1;
-  double H_aa_bbbb_pt_min_b = 9999;
+  double H_aa_bbbb_dR_max_b  = -0.1;
+  double H_aa_bbbb_pt_min_b  = 9999;
+  double H_aa_bbbb_mass_H    = 9999;
+
+  // declare the tlozentz vectors of the b, then the a, and H 
+  // initialize the a vectors to 0 
+  ROOT::Math::PtEtaPhiMVector bb[2];
+  ROOT::Math::PtEtaPhiMVector aa[2]; 
+  ROOT::Math::PtEtaPhiMVector H(0,0,0,0); 
+  aa[0].SetCoordinates(-1,-1,-1,-1);
+  aa[1].SetCoordinates(-1,-1,-1,-1);
+  
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
+    H_aa_bbbb_mass_H =  fjlabel.second->mass();
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
-      H_aa_bbbb_mass_a = dau->mass();
+      // H_aa_bbbb_mass_a1 = dau->mass(); // this is the read out mass. We will use calculated mass instead
       for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
 	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
 	auto pdgid = std::abs(gdau->pdgId());
 	if (pdgid == ParticleID::p_b){
+
+	  // make the tlorentz vector of the two b here. use jdau
+	  bb[jdau].SetCoordinates(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass());
+	    
 	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
 	    H_aa_bbbb_pt_min_b = gdau->pt();
 	  }
@@ -293,11 +315,23 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 	  }
 	}
       }
+      // use info from the two b to fill in the tlorentz vector of a. use idau 
+      aa[idau] = bb[0] + bb[1];
     }
+    H = aa[0] + aa[1];
   }
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a",   H_aa_bbbb_mass_a);
+
+
+  // bigger mass is a1, smaller mass is a2 
+  double a1 = ( aa[0].M() > aa[1].M() ) ? aa[0].M():aa[1].M(); 
+  double a2 = ( aa[0].M() < aa[1].M() ) ? aa[0].M():aa[1].M();
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1", a1);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", a2);
+
   data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
   data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_H_calc", H.M());
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", H_aa_bbbb_mass_H);
 
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
