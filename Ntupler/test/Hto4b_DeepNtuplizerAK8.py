@@ -29,8 +29,8 @@ if options.fileIndex >= 0:
 
 options.inputFiles = in_file_list
 
-# out_dir = os.getcwd()+'/output/'
-out_dir = '/home/chosila/Projects/CMSSW_10_6_32/src/DeepNTuples/Ntuples/'
+out_dir = os.getcwd()+'/output/'
+# out_dir = '/home/chosila/Projects/CMSSW_10_6_32/src/DeepNTuples/Ntuples/'
 out_str = out_dir+'AK8_'+options.inputDataset
 if options.fileIndex >= 0:
     out_str += ('_file_%03d' % options.fileIndex)
@@ -53,7 +53,7 @@ process.load('FWCore.MessageService.MessageLogger_cfi')
 if options.maxEvents < 1:
     printEvent = 5000
 else:
-    printEvent = max(100, min(5000, int(math.sqrt(options.maxEvents*10)) ) )
+    printEvent = min(5000, int(math.sqrt(options.maxEvents*10)))
 print '\nWill process up to %d events, report every %d' % (options.maxEvents, printEvent)
 process.MessageLogger.cerr.FwkReport.reportEvery = printEvent
 
@@ -228,7 +228,7 @@ process.deepntuplizer.useReclusteredJets = useReclusteredJets
 process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
 process.deepntuplizer.jetPtMin = 170
 process.deepntuplizer.jetMassMin = 50
-process.deepntuplizer.jetXbbAvgMin = 0.2
+process.deepntuplizer.jetAvgXbbMin = 0.2
 
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'

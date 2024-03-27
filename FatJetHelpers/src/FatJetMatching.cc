@@ -169,6 +169,7 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
 
 
 
+// Assign label based on GEN particles matched to jet within radius distR
 std::pair<FatJetMatching::FatJetLabel, const reco::GenParticle*> FatJetMatching::flavorLabel(const pat::Jet* jet,
     const reco::GenParticleCollection& genParticles, double distR) {
 
@@ -184,6 +185,10 @@ std::pair<FatJetMatching::FatJetLabel, const reco::GenParticle*> FatJetMatching:
     }
   }
 
+  // Loop over all GEN particles, match to one initial state particle (or ttbar pair)
+  // Priority ttbar > top > Higgs > W > Z > QCD
+  // WARNING! Only supports WtoQQ and ZtoQQ samples, and undefined behavior
+  //          with multiple initial state particles (e.g. WH) - AWB 2024.03.26
   for (unsigned ipart = 0; ipart<genParticles.size(); ++ipart){
     const auto *gp = &genParticles[ipart];
 
@@ -192,6 +197,17 @@ std::pair<FatJetMatching::FatJetLabel, const reco::GenParticle*> FatJetMatching:
 
     auto pdgid = std::abs(gp->pdgId());
     if (pdgid == ParticleID::p_t){
+      // If we find both top and anti-top, categorize as ttbar
+      for (unsigned jpart = 0; jpart<genParticles.size(); ++jpart){
+	const auto *gpb = &genParticles[jpart];
+	if (gp->pdgId() + gpb->pdgId() == 0) {
+	  auto result = ttbar_label(jet, gp, gpb, distR);
+	  if (result.first != FatJetLabel::Invalid){
+	    return result;
+	  }
+	}
+      }
+      // If only one top quark, categorize as top
       auto result = top_label(jet, gp, distR);
       if (result.first != FatJetLabel::Invalid){
         return result;
@@ -295,6 +311,75 @@ std::vector<const reco::GenParticle*> FatJetMatching::getDaughterQuarks(const re
   return daughters;
 }
 
+std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::ttbar_label(const pat::Jet* jet, const reco::GenParticle *partonA, const reco::GenParticle *partonB, double distR)
+{
+
+  // ttbar label based on individual top labels
+  auto labA = top_label(jet, partonA, distR).first;
+  auto labB = top_label(jet, partonB, distR).first;
+  auto topA = getFinal(partonA);
+
+  // Count "standard" top labels
+  int n_ISR = ((labA == FatJetLabel::W_ISR)   + (labB == FatJetLabel::W_ISR) +
+	       (labA == FatJetLabel::Top_ISR) + (labB == FatJetLabel::Top_ISR));
+  int n_q   = ((labA == FatJetLabel::W_c || labA == FatJetLabel::W_q || labA == FatJetLabel::Top_tauH) +
+	       (labB == FatJetLabel::W_c || labB == FatJetLabel::W_q || labB == FatJetLabel::Top_tauH));
+  int n_b   = ((labA == FatJetLabel::Top_b) + (labB == FatJetLabel::Top_b));
+  int n_bq  = ((labA == FatJetLabel::Top_bc || labA == FatJetLabel::Top_bq || labA == FatJetLabel::Top_btauH) +
+	       (labB == FatJetLabel::Top_bc || labB == FatJetLabel::Top_bq || labB == FatJetLabel::Top_btauH));
+  int n_qq  = ((labA == FatJetLabel::W_cq || labA == FatJetLabel::W_qq) +
+	       (labB == FatJetLabel::W_cq || labB == FatJetLabel::W_qq));
+  int n_bqq = ((labA == FatJetLabel::Top_bcq || labA == FatJetLabel::Top_bqq) +
+	       (labB == FatJetLabel::Top_bcq || labB == FatJetLabel::Top_bqq));
+  int n_l   = ((labA == FatJetLabel::Top_ele || labA == FatJetLabel::Top_mu || labA == FatJetLabel::Top_tauL) +
+	       (labB == FatJetLabel::Top_ele || labB == FatJetLabel::Top_mu || labB == FatJetLabel::Top_tauL));
+  int n_bl  = ((labA == FatJetLabel::Top_bele || labA == FatJetLabel::Top_bmu || labA == FatJetLabel::Top_btauL) +
+	       (labB == FatJetLabel::Top_bele || labB == FatJetLabel::Top_bmu || labB == FatJetLabel::Top_btauL));
+
+  // Make TT label corresponding to both top quarks
+  if  (n_ISR == 2)                return std::make_pair(FatJetLabel::TT_ISR, topA);
+  if ((n_ISR == 1) && (n_q == 1))   return std::make_pair(FatJetLabel::TT_q, topA);
+  if ((n_ISR == 1) && (n_b == 1))   return std::make_pair(FatJetLabel::TT_b, topA);
+  if ((n_ISR == 1) && (n_bq == 1))  return std::make_pair(FatJetLabel::TT_bq, topA);
+  if ((n_ISR == 1) && (n_qq == 1))  return std::make_pair(FatJetLabel::TT_qq, topA);
+  if ((n_ISR == 1) && (n_bqq == 1)) return std::make_pair(FatJetLabel::TT_bqq, topA);
+  if ((n_ISR == 1) && (n_l == 1))   return std::make_pair(FatJetLabel::TT_l, topA);
+  if ((n_ISR == 1) && (n_bl == 1))  return std::make_pair(FatJetLabel::TT_bl, topA);
+  if  (n_q == 2)                  return std::make_pair(FatJetLabel::TT_q_q, topA);
+  if ((n_q == 1) && (n_b == 1))   return std::make_pair(FatJetLabel::TT_b_q, topA);
+  if ((n_q == 1) && (n_bq == 1))  return std::make_pair(FatJetLabel::TT_bq_q, topA);
+  if ((n_q == 1) && (n_qq == 1))  return std::make_pair(FatJetLabel::TT_qq_q, topA);
+  if ((n_q == 1) && (n_bqq == 1)) return std::make_pair(FatJetLabel::TT_bqq_q, topA);
+  if ((n_q == 1) && (n_l == 1))   return std::make_pair(FatJetLabel::TT_l_q, topA);
+  if ((n_q == 1) && (n_bl == 1))  return std::make_pair(FatJetLabel::TT_bl_q, topA);
+  if  (n_b == 2)                  return std::make_pair(FatJetLabel::TT_b_b, topA);
+  if ((n_b == 1) && (n_bq == 1))  return std::make_pair(FatJetLabel::TT_bq_b, topA);
+  if ((n_b == 1) && (n_qq == 1))  return std::make_pair(FatJetLabel::TT_qq_b, topA);
+  if ((n_b == 1) && (n_bqq == 1)) return std::make_pair(FatJetLabel::TT_bqq_b, topA);
+  if ((n_b == 1) && (n_l == 1))   return std::make_pair(FatJetLabel::TT_l_b, topA);
+  if ((n_b == 1) && (n_bl == 1))  return std::make_pair(FatJetLabel::TT_bl_b, topA);
+  if  (n_bq == 2)                  return std::make_pair(FatJetLabel::TT_bq_bq, topA);
+  if ((n_bq == 1) && (n_qq == 1))  return std::make_pair(FatJetLabel::TT_qq_bq, topA);
+  if ((n_bq == 1) && (n_bqq == 1)) return std::make_pair(FatJetLabel::TT_bqq_bq, topA);
+  if ((n_bq == 1) && (n_l == 1))   return std::make_pair(FatJetLabel::TT_l_bq, topA);
+  if ((n_bq == 1) && (n_bl == 1))  return std::make_pair(FatJetLabel::TT_bl_bq, topA);
+  if  (n_qq == 2)                  return std::make_pair(FatJetLabel::TT_qq_qq, topA);
+  if ((n_qq == 1) && (n_bqq == 1)) return std::make_pair(FatJetLabel::TT_bqq_qq, topA);
+  if ((n_qq == 1) && (n_l == 1))   return std::make_pair(FatJetLabel::TT_l_qq, topA);
+  if ((n_qq == 1) && (n_bl == 1))  return std::make_pair(FatJetLabel::TT_bl_qq, topA);
+  if  (n_bqq == 2)                 return std::make_pair(FatJetLabel::TT_bqq_bqq, topA);
+  if ((n_bqq == 1) && (n_l == 1))  return std::make_pair(FatJetLabel::TT_l_bqq, topA);
+  if ((n_bqq == 1) && (n_bl == 1)) return std::make_pair(FatJetLabel::TT_bl_bqq, topA);
+  if  (n_l == 2)                 return std::make_pair(FatJetLabel::TT_l_l, topA);
+  if ((n_l == 1) && (n_bl == 1)) return std::make_pair(FatJetLabel::TT_bl_l, topA);
+  if  (n_bl == 2)              return std::make_pair(FatJetLabel::TT_bl_bl, topA);
+
+  std::cout << "[FatJetMatching::ttbar_label] Top labels = " << labA << " and " << labB << std::endl;
+  throw std::logic_error("[FatJetMatching::ttbar_label] Cannot find valid ttbar matching! See above.");
+
+  return std::make_pair(FatJetLabel::Invalid, nullptr);
+} // End function FatJetMatching::ttbar_label
+
 std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::top_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
 {
 
@@ -323,7 +408,6 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
 
     auto wdaus = getDaughterQuarks(w_from_top);
     if (wdaus.size() < 2) throw std::logic_error("[FatJetMatching::top_label] W decay has less than 2 quarks!");
-//    if (wdaus.size() >= 2)
     {
       double dr_b     = reco::deltaR(jet->p4(), b_from_top->p4());
       double dr_q1    = reco::deltaR(jet->p4(), wdaus.at(0)->p4());
@@ -363,6 +447,8 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
           }else{
             return std::make_pair(FatJetLabel::Top_bq, top);
           }
+        }else{
+	  return std::make_pair(FatJetLabel::Top_b, top);
         }
       }else{
         // test for W if dr(b, jet) > distR
@@ -400,20 +486,40 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
       cout << "pdgid(l)           : " << lep->pdgId() << endl;
     }
 
+    auto lep_id = std::abs(lep->pdgId());
     if (dr_b < distR && dr_l < distR){
-      auto pdgid = std::abs(lep->pdgId());
-      if (pdgid == ParticleID::p_eminus){
+      if (lep_id == ParticleID::p_eminus){
         return std::make_pair(FatJetLabel::Top_bele, top);
-      } else if (pdgid == ParticleID::p_muminus){
+      } else if (lep_id == ParticleID::p_muminus){
         return std::make_pair(FatJetLabel::Top_bmu, top);
-      } else if (pdgid == ParticleID::p_tauminus){
-        return std::make_pair(FatJetLabel::Top_btau, top);
+      } else if (lep_id == ParticleID::p_tauminus){
+	for (unsigned kdau=0; kdau < lep->numberOfDaughters(); ++kdau){
+	  if ( std::abs(lep->daughter(kdau)->pdgId()) == ParticleID::p_eminus ||
+	       std::abs(lep->daughter(kdau)->pdgId()) == ParticleID::p_muminus )
+	    return std::make_pair(FatJetLabel::Top_btauL, top);
+	}
+	return std::make_pair(FatJetLabel::Top_btauH, top);
       }
     }
+    else if (dr_l < distR){
+      if (lep_id == ParticleID::p_eminus){
+        return std::make_pair(FatJetLabel::Top_ele, top);
+      } else if (lep_id == ParticleID::p_muminus){
+        return std::make_pair(FatJetLabel::Top_mu, top);
+      } else if (lep_id == ParticleID::p_tauminus){
+	for (unsigned kdau=0; kdau < lep->numberOfDaughters(); ++kdau){
+	  if ( std::abs(lep->daughter(kdau)->pdgId()) == ParticleID::p_eminus ||
+	       std::abs(lep->daughter(kdau)->pdgId()) == ParticleID::p_muminus )
+	    return std::make_pair(FatJetLabel::Top_tauL, top);
+	}
+	return std::make_pair(FatJetLabel::Top_tauH, top);
+      }
+    }
+    else {
+      return std::make_pair(FatJetLabel::Top_b, top);
+    }
   }
-
-  return std::make_pair(FatJetLabel::Invalid, nullptr);
-
+  return std::make_pair(FatJetLabel::Top_ISR, top);
 }
 
 std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::w_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
@@ -429,7 +535,6 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
 
     auto wdaus = getDaughterQuarks(w);
     if (wdaus.size() < 2) throw std::logic_error("[FatJetMatching::w_label] W decay has less than 2 quarks!");
-//    if (wdaus.size() >= 2)
     {
       double dr_q1    = reco::deltaR(jet->p4(), wdaus.at(0)->p4());
       double dr_q2    = reco::deltaR(jet->p4(), wdaus.at(1)->p4());
@@ -452,16 +557,20 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
       if (dr_q1<distR && dr_q2<distR){
         if (pdgid_q1 >= ParticleID::p_c || pdgid_q2 >= ParticleID::p_c) {
           return std::make_pair(FatJetLabel::W_cq, w);
-        }
-        else {
+        } else {
           return std::make_pair(FatJetLabel::W_qq, w);
+        }
+      } else if (dr_q1<distR) {
+        if (pdgid_q1 >= ParticleID::p_c) {
+          return std::make_pair(FatJetLabel::W_c, w);
+        } else {
+          return std::make_pair(FatJetLabel::W_q, w);
         }
       }
     }
+    return std::make_pair(FatJetLabel::W_ISR, w);
   }
-
   return std::make_pair(FatJetLabel::Invalid, nullptr);
-
 }
 
 std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::z_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)
@@ -477,7 +586,6 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
 
     auto zdaus = getDaughterQuarks(z);
     if (zdaus.size() < 2) throw std::logic_error("[FatJetMatching::z_label] Z decay has less than 2 quarks!");
-//    if (zdaus.size() >= 2)
     {
       double dr_q1    = reco::deltaR(jet->p4(), zdaus.at(0)->p4());
       double dr_q2    = reco::deltaR(jet->p4(), zdaus.at(1)->p4());
@@ -505,12 +613,19 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
         }else {
           return std::make_pair(FatJetLabel::Z_qq, z);
         }
+      } else if (dr_q1<distR){
+        if (pdgid_q1 == ParticleID::p_b) {
+          return std::make_pair(FatJetLabel::Z_b, z);
+        }else if (pdgid_q1 == ParticleID::p_c) {
+          return std::make_pair(FatJetLabel::Z_c, z);
+        }else {
+          return std::make_pair(FatJetLabel::Z_q, z);
+        }
       }
     }
+    return std::make_pair(FatJetLabel::Z_ISR, z);
   }
-
   return std::make_pair(FatJetLabel::Invalid, nullptr);
-
 }
 
 std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::higgs_label(const pat::Jet* jet, const reco::GenParticle *parton, double distR)

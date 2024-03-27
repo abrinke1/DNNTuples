@@ -37,28 +37,89 @@ void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup
 void FatJetInfoFiller::book() {
   // truth labels
   data.add<int>("fj_label", 0);
+  data.add<int>("fj_isTT", 0);
   data.add<int>("fj_isTop", 0);
   data.add<int>("fj_isW", 0);
   data.add<int>("fj_isZ", 0);
   data.add<int>("fj_isH", 0);
+  data.add<int>("fj_isISR", 0);
   data.add<int>("fj_isQCD", 0);
+  data.add<int>("fj_isNonRes", 0);
+
+  // Non-resonant final states from ttbar, top, W, or Z
+  data.add<int>("label_NR_LF",  0);
+  data.add<int>("label_NR_b",   0);
+  data.add<int>("label_NR_bb",  0);
+  data.add<int>("label_NR_lep", 0);
+  data.add<int>("label_NR_ll",  0);
+
+  // "TT" includes all AK8 jets from ttbar events
+  // "l" includes electrons or muons from W or W --> tau decays
+  // "q" includes charm quarks and W --> tau --> hadron decays
+  data.add<int>("label_TT_ISR", 0);
+  data.add<int>("label_TT_q", 0);
+  data.add<int>("label_TT_b", 0);
+  data.add<int>("label_TT_bq", 0);
+  data.add<int>("label_TT_qq", 0);
+  data.add<int>("label_TT_bqq", 0);
+  data.add<int>("label_TT_l", 0);
+  data.add<int>("label_TT_bl", 0);
+  data.add<int>("label_TT_q_q", 0);
+  data.add<int>("label_TT_b_q", 0);
+  data.add<int>("label_TT_bq_q", 0);
+  data.add<int>("label_TT_qq_q", 0);
+  data.add<int>("label_TT_bqq_q", 0);
+  data.add<int>("label_TT_l_q", 0);
+  data.add<int>("label_TT_bl_q", 0);
+  data.add<int>("label_TT_b_b", 0);
+  data.add<int>("label_TT_bq_b", 0);
+  data.add<int>("label_TT_qq_b", 0);
+  data.add<int>("label_TT_bqq_b", 0);
+  data.add<int>("label_TT_l_b", 0);
+  data.add<int>("label_TT_bl_b", 0);
+  data.add<int>("label_TT_bq_bq", 0);
+  data.add<int>("label_TT_qq_bq", 0);
+  data.add<int>("label_TT_bqq_bq", 0);
+  data.add<int>("label_TT_l_bq", 0);
+  data.add<int>("label_TT_bl_bq", 0);
+  data.add<int>("label_TT_qq_qq", 0);
+  data.add<int>("label_TT_bqq_qq", 0);
+  data.add<int>("label_TT_l_qq", 0);
+  data.add<int>("label_TT_bl_qq", 0);
+  data.add<int>("label_TT_bqq_bqq", 0);
+  data.add<int>("label_TT_l_bqq", 0);
+  data.add<int>("label_TT_bl_bqq", 0);
+  data.add<int>("label_TT_l_l", 0);
+  data.add<int>("label_TT_bl_l", 0);
+  data.add<int>("label_TT_bl_bl", 0);
 
   data.add<int>("label_Top_bcq", 0);
   data.add<int>("label_Top_bqq", 0);
   data.add<int>("label_Top_bc",  0);
   data.add<int>("label_Top_bq",  0);
+  data.add<int>("label_Top_bqt",  0); // q, tau --> had
   data.add<int>("label_Top_bele",0);
   data.add<int>("label_Top_bmu", 0);
-  data.add<int>("label_Top_btau",0);
+  data.add<int>("label_Top_btauH",0); // tau --> had
+  data.add<int>("label_Top_btauL",0); // tau --> lep
   data.add<int>("label_Top_bl",  0); // e, mu
-  data.add<int>("label_Top_blt", 0); // e, mu, tau (any)
+  data.add<int>("label_Top_blt", 0); // e, mu, tau --> lep
+  data.add<int>("label_Top_b", 0);
+  data.add<int>("label_Top_ISR", 0);
 
-  data.add<int>("label_W_cq",    0);
-  data.add<int>("label_W_qq",    0);
+  data.add<int>("label_W_cq",  0);
+  data.add<int>("label_W_qq",  0);
+  data.add<int>("label_W_c",   0);
+  data.add<int>("label_W_q",   0);
+  data.add<int>("label_W_ISR", 0);
 
-  data.add<int>("label_Z_bb",    0);
-  data.add<int>("label_Z_cc",    0);
-  data.add<int>("label_Z_qq",    0);
+  data.add<int>("label_Z_bb",  0);
+  data.add<int>("label_Z_cc",  0);
+  data.add<int>("label_Z_qq",  0);
+  data.add<int>("label_Z_b",   0);
+  data.add<int>("label_Z_c",   0);
+  data.add<int>("label_Z_q",   0);
+  data.add<int>("label_Z_ISR", 0);
 
   data.add<int>("label_H_bb",    0);
   data.add<int>("label_H_cc",    0);
@@ -104,9 +165,13 @@ void FatJetInfoFiller::book() {
   // specific gen info for H --> aa --> bbbb decay
   data.add<float>("fj_gen_H_aa_bbbb_mass_a1", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_mass_a2", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_min", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_max", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_min", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_max", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
   data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
-  data.add<float>("fj_gen_H_aa_bbbb_mass_H", -1.0); 
+  data.add<float>("fj_gen_H_aa_bbbb_mass_H", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_mass_H_calc", -1.0);
 
   // --- jet energy/mass regression ---
@@ -171,7 +236,6 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_relptdiff", 0);
   data.add<float>("fj_sdn2", 0);
 
-
   //double-b
   data.add<float>("fj_doubleb", 0);
 
@@ -180,35 +244,6 @@ void FatJetInfoFiller::book() {
   data.add<int>("fj_isNonBB", 0);
   data.add<int>("fj_nbHadrons", 0);
   data.add<int>("fj_ncHadrons", 0);
-
-  //double-b inputs
-  // data.add<float>("fj_z_ratio", 0);
-  // data.add<float>("fj_trackSipdSig_3", 0);
-  // data.add<float>("fj_trackSipdSig_2", 0);
-  // data.add<float>("fj_trackSipdSig_1", 0);
-  // data.add<float>("fj_trackSipdSig_0", 0);
-  // data.add<float>("fj_trackSipdSig_1_0", 0);
-  // data.add<float>("fj_trackSipdSig_0_0", 0);
-  // data.add<float>("fj_trackSipdSig_1_1", 0);
-  // data.add<float>("fj_trackSipdSig_0_1", 0);
-  // data.add<float>("fj_trackSip2dSigAboveCharm_0", 0);
-  // data.add<float>("fj_trackSip2dSigAboveBottom_0", 0);
-  // data.add<float>("fj_trackSip2dSigAboveBottom_1", 0);
-  // data.add<float>("fj_tau1_trackEtaRel_0", 0);
-  // data.add<float>("fj_tau1_trackEtaRel_1", 0);
-  // data.add<float>("fj_tau1_trackEtaRel_2", 0);
-  // data.add<float>("fj_tau0_trackEtaRel_0", 0);
-  // data.add<float>("fj_tau0_trackEtaRel_1", 0);
-  // data.add<float>("fj_tau0_trackEtaRel_2", 0);
-  // data.add<float>("fj_tau_vertexMass_0", 0);
-  // data.add<float>("fj_tau_vertexEnergyRatio_0", 0);
-  // data.add<float>("fj_tau_vertexDeltaR_0", 0);
-  // data.add<float>("fj_tau_flightDistance2dSig_0", 0);
-  // data.add<float>("fj_tau_vertexMass_1", 0);
-  // data.add<float>("fj_tau_vertexEnergyRatio_1", 0);
-  // data.add<float>("fj_tau_flightDistance2dSig_1", 0);
-  // data.add<float>("fj_jetNTracks", 0);
-  // data.add<float>("fj_nSV", 0);
 
 }
 
@@ -230,32 +265,109 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   data.fill<int>("fj_label", fjlabel.first);
 
+  data.fill<int>("fj_isTT",  fjlabel.first >= FatJetMatching::TT_all  && fjlabel.first < FatJetMatching::Top_all);
   data.fill<int>("fj_isTop", fjlabel.first >= FatJetMatching::Top_all && fjlabel.first < FatJetMatching::W_all);
   data.fill<int>("fj_isW",   fjlabel.first >= FatJetMatching::W_all && fjlabel.first < FatJetMatching::Z_all);
   data.fill<int>("fj_isZ",   fjlabel.first >= FatJetMatching::Z_all && fjlabel.first < FatJetMatching::H_all);
   data.fill<int>("fj_isH",   fjlabel.first >= FatJetMatching::H_all && fjlabel.first < FatJetMatching::QCD_all);
+  data.fill<int>("fj_isISR", fjlabel.first == FatJetMatching::TT_ISR || fjlabel.first == FatJetMatching::Top_ISR ||
+		             fjlabel.first == FatJetMatching::W_ISR || fjlabel.first == FatJetMatching::Z_ISR);
   data.fill<int>("fj_isQCD", fjlabel.first >= FatJetMatching::QCD_all);
 
   // veto unmatched jets in signal samples for training
   if (isTrainSample_ && !isQCDSample_ && fjlabel.first >= FatJetMatching::QCD_all)
     return false;
 
+  int _label_NR_LF =  (fjlabel.first == FatJetMatching::TT_q || fjlabel.first == FatJetMatching::TT_q_q ||
+		       fjlabel.first == FatJetMatching::W_c  || fjlabel.first == FatJetMatching::W_q ||
+		       fjlabel.first == FatJetMatching::Z_c  || fjlabel.first == FatJetMatching::Z_q);
+  int _label_NR_b =   (fjlabel.first == FatJetMatching::TT_b   || fjlabel.first == FatJetMatching::TT_bq ||
+		       fjlabel.first == FatJetMatching::TT_b_q || fjlabel.first == FatJetMatching::TT_bq_q ||
+		       fjlabel.first == FatJetMatching::Top_b || fjlabel.first == FatJetMatching::Top_bc ||
+		       fjlabel.first == FatJetMatching::Top_bq || fjlabel.first == FatJetMatching::Top_btauH ||
+		       fjlabel.first == FatJetMatching::Z_b);
+  int _label_NR_bb =  (fjlabel.first == FatJetMatching::TT_b_b || fjlabel.first == FatJetMatching::TT_bq_b ||
+		       fjlabel.first == FatJetMatching::TT_bq_bq);
+  int _label_NR_lep = (fjlabel.first == FatJetMatching::TT_l    || fjlabel.first == FatJetMatching::TT_bl ||
+		       fjlabel.first == FatJetMatching::TT_l_q  || fjlabel.first == FatJetMatching::TT_bl_q ||
+		       fjlabel.first == FatJetMatching::TT_l_b  || fjlabel.first == FatJetMatching::TT_bl_b ||
+		       fjlabel.first == FatJetMatching::TT_l_bq || fjlabel.first == FatJetMatching::TT_bl_bq ||
+		       fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu ||
+		       fjlabel.first == FatJetMatching::Top_btauH);
+  int _label_NR_ll =  (fjlabel.first == FatJetMatching::TT_l_l || fjlabel.first == FatJetMatching::TT_bl_l ||
+		       fjlabel.first == FatJetMatching::TT_bl_bl);
+
+  data.fill<int>("fj_isNonRes", _label_NR_LF+_label_NR_b+_label_NR_bb+_label_NR_lep);
+  data.fill<int>("label_NR_LF",  _label_NR_LF);
+  data.fill<int>("label_NR_b",   _label_NR_b);
+  data.fill<int>("label_NR_bb",  _label_NR_bb);
+  data.fill<int>("label_NR_lep", _label_NR_lep);
+  data.fill<int>("label_NR_ll",  _label_NR_ll);
+
+  data.fill<int>("label_TT_ISR",     fjlabel.first == FatJetMatching::TT_ISR);
+  data.fill<int>("label_TT_q",       fjlabel.first == FatJetMatching::TT_q);
+  data.fill<int>("label_TT_b",       fjlabel.first == FatJetMatching::TT_b);
+  data.fill<int>("label_TT_bq",      fjlabel.first == FatJetMatching::TT_bq);
+  data.fill<int>("label_TT_qq",      fjlabel.first == FatJetMatching::TT_qq);
+  data.fill<int>("label_TT_bqq",     fjlabel.first == FatJetMatching::TT_bqq);
+  data.fill<int>("label_TT_l",       fjlabel.first == FatJetMatching::TT_l);
+  data.fill<int>("label_TT_bl",      fjlabel.first == FatJetMatching::TT_bl);
+  data.fill<int>("label_TT_q_q",     fjlabel.first == FatJetMatching::TT_q_q);
+  data.fill<int>("label_TT_b_q",     fjlabel.first == FatJetMatching::TT_b_q);
+  data.fill<int>("label_TT_bq_q",    fjlabel.first == FatJetMatching::TT_bq_q);
+  data.fill<int>("label_TT_qq_q",    fjlabel.first == FatJetMatching::TT_qq_q);
+  data.fill<int>("label_TT_bqq_q",   fjlabel.first == FatJetMatching::TT_bqq_q);
+  data.fill<int>("label_TT_l_q",     fjlabel.first == FatJetMatching::TT_l_q);
+  data.fill<int>("label_TT_bl_q",    fjlabel.first == FatJetMatching::TT_bl_q);
+  data.fill<int>("label_TT_b_b",     fjlabel.first == FatJetMatching::TT_b_b);
+  data.fill<int>("label_TT_bq_b",    fjlabel.first == FatJetMatching::TT_bq_b);
+  data.fill<int>("label_TT_qq_b",    fjlabel.first == FatJetMatching::TT_qq_b);
+  data.fill<int>("label_TT_bqq_b",   fjlabel.first == FatJetMatching::TT_bqq_b);
+  data.fill<int>("label_TT_l_b",     fjlabel.first == FatJetMatching::TT_l_b);
+  data.fill<int>("label_TT_bl_b",    fjlabel.first == FatJetMatching::TT_bl_b);
+  data.fill<int>("label_TT_bq_bq",   fjlabel.first == FatJetMatching::TT_bq_bq);
+  data.fill<int>("label_TT_qq_bq",   fjlabel.first == FatJetMatching::TT_qq_bq);
+  data.fill<int>("label_TT_bqq_bq",  fjlabel.first == FatJetMatching::TT_bqq_bq);
+  data.fill<int>("label_TT_l_bq",    fjlabel.first == FatJetMatching::TT_l_bq);
+  data.fill<int>("label_TT_bl_bq",   fjlabel.first == FatJetMatching::TT_bl_bq);
+  data.fill<int>("label_TT_qq_qq",   fjlabel.first == FatJetMatching::TT_qq_qq);
+  data.fill<int>("label_TT_bqq_qq",  fjlabel.first == FatJetMatching::TT_bqq_qq);
+  data.fill<int>("label_TT_l_qq",    fjlabel.first == FatJetMatching::TT_l_qq);
+  data.fill<int>("label_TT_bl_qq",   fjlabel.first == FatJetMatching::TT_bl_qq);
+  data.fill<int>("label_TT_bqq_bqq", fjlabel.first == FatJetMatching::TT_bqq_bqq);
+  data.fill<int>("label_TT_l_bqq",   fjlabel.first == FatJetMatching::TT_l_bqq);
+  data.fill<int>("label_TT_bl_bqq",  fjlabel.first == FatJetMatching::TT_bl_bqq);
+  data.fill<int>("label_TT_l_l",     fjlabel.first == FatJetMatching::TT_l_l);
+  data.fill<int>("label_TT_bl_l",    fjlabel.first == FatJetMatching::TT_bl_l);
+  data.fill<int>("label_TT_bl_bl",   fjlabel.first == FatJetMatching::TT_bl_bl);
+
   data.fill<int>("label_Top_bcq", fjlabel.first == FatJetMatching::Top_bcq);
   data.fill<int>("label_Top_bqq", fjlabel.first == FatJetMatching::Top_bqq);
   data.fill<int>("label_Top_bc",  fjlabel.first == FatJetMatching::Top_bc);
   data.fill<int>("label_Top_bq",  fjlabel.first == FatJetMatching::Top_bq);
+  data.fill<int>("label_Top_bqt", fjlabel.first == FatJetMatching::Top_bq || fjlabel.first == FatJetMatching::Top_btauH);
   data.fill<int>("label_Top_bele",fjlabel.first == FatJetMatching::Top_bele);
   data.fill<int>("label_Top_bmu", fjlabel.first == FatJetMatching::Top_bmu);
-  data.fill<int>("label_Top_btau",fjlabel.first == FatJetMatching::Top_btau);
+  data.fill<int>("label_Top_btauH",fjlabel.first == FatJetMatching::Top_btauH);
+  data.fill<int>("label_Top_btauL",fjlabel.first == FatJetMatching::Top_btauL);
   data.fill<int>("label_Top_bl",  fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu);
-  data.fill<int>("label_Top_blt", fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu || fjlabel.first == FatJetMatching::Top_btau);
+  data.fill<int>("label_Top_blt", fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu || fjlabel.first == FatJetMatching::Top_btauL);
+  data.fill<int>("label_Top_b",fjlabel.first == FatJetMatching::Top_b);
+  data.fill<int>("label_Top_ISR",fjlabel.first == FatJetMatching::Top_ISR);
 
   data.fill<int>("label_W_cq",    fjlabel.first == FatJetMatching::W_cq);
   data.fill<int>("label_W_qq",    fjlabel.first == FatJetMatching::W_qq);
+  data.fill<int>("label_W_c",     fjlabel.first == FatJetMatching::W_c);
+  data.fill<int>("label_W_q",     fjlabel.first == FatJetMatching::W_q);
+  data.fill<int>("label_W_ISR",   fjlabel.first == FatJetMatching::W_ISR);
 
   data.fill<int>("label_Z_bb",    fjlabel.first == FatJetMatching::Z_bb);
   data.fill<int>("label_Z_cc",    fjlabel.first == FatJetMatching::Z_cc);
   data.fill<int>("label_Z_qq",    fjlabel.first == FatJetMatching::Z_qq);
+  data.fill<int>("label_Z_b",     fjlabel.first == FatJetMatching::Z_b);
+  data.fill<int>("label_Z_c",     fjlabel.first == FatJetMatching::Z_c);
+  data.fill<int>("label_Z_q",     fjlabel.first == FatJetMatching::Z_q);
+  data.fill<int>("label_Z_ISR",   fjlabel.first == FatJetMatching::Z_ISR);
 
   data.fill<int>("label_H_bb",    fjlabel.first == FatJetMatching::H_bb);
   data.fill<int>("label_H_cc",    fjlabel.first == FatJetMatching::H_cc);
@@ -282,58 +394,85 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   // specific gen info for H --> aa --> bbbb decay
   // matching code taken from FatJetHelpers/src/FatJetMatching.cc
-  double H_aa_bbbb_dR_max_b  = -0.1;
-  double H_aa_bbbb_pt_min_b  = 9999;
-  double H_aa_bbbb_mass_H    = 9999;
+  double dR_max_b  = -0.1;
+  double pt_min_b  = 9999;
+  double mass_H    = 9999;
+  double mass_bb_min = 9999;
+  double mass_bb_max = 9999;
+  double mass_bbbar_min = 9999;
+  double mass_bbbar_max = 9999;
 
   // declare the tlozentz vectors of the b, then the a, and H 
   // initialize the a vectors to 0 
-  ROOT::Math::PtEtaPhiMVector bb[2];
-  ROOT::Math::PtEtaPhiMVector aa[2]; 
-  ROOT::Math::PtEtaPhiMVector H(0,0,0,0); 
-  aa[0].SetCoordinates(-1,-1,-1,-1);
-  aa[1].SetCoordinates(-1,-1,-1,-1);
+  ROOT::Math::PtEtaPhiMVector bVec[2];    // b quarks from a boson decays
+  ROOT::Math::PtEtaPhiMVector bbarVec[2]; // anti-b quarks from a boson decays
+  ROOT::Math::PtEtaPhiMVector aVec[2];    // a bosons from b-bbar pairs
+  ROOT::Math::PtEtaPhiMVector H(0,0,0,0); // Higgs constructed from a bosons
+  for (uint jj=0; jj < 2; jj++) {
+    bVec[jj].SetCoordinates(-1,-1,-1,-1);
+    bbarVec[jj].SetCoordinates(-1,-1,-1,-1);
+    aVec[jj].SetCoordinates(-1,-1,-1,-1);
+  }
   
   if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
-    H_aa_bbbb_mass_H =  fjlabel.second->mass();
+    mass_H = fjlabel.second->mass();
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
       // H_aa_bbbb_mass_a1 = dau->mass(); // this is the read out mass. We will use calculated mass instead
       for (unsigned jdau=0; jdau<dau->numberOfDaughters(); ++jdau){
 	const auto *gdau = dynamic_cast<const reco::GenParticle*>(dau->daughter(jdau));
-	auto pdgid = std::abs(gdau->pdgId());
-	if (pdgid == ParticleID::p_b){
-
+	auto pdgid = gdau->pdgId();
+	if (std::abs(pdgid) == ParticleID::p_b){
 	  // make the tlorentz vector of the two b here. use jdau
-	  bb[jdau].SetCoordinates(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass());
-	    
-	  if (gdau->pt() < H_aa_bbbb_pt_min_b) {
-	    H_aa_bbbb_pt_min_b = gdau->pt();
+	  if (pdgid > 0) {
+	    bVec[idau].SetCoordinates(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass());
+	  } else {
+	    bbarVec[idau].SetCoordinates(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass());
 	  }
-	  if (reco::deltaR(*gdau, jet.p4()) > H_aa_bbbb_dR_max_b) {
-	    H_aa_bbbb_dR_max_b = reco::deltaR(*gdau, jet.p4());
+	  if (gdau->pt() < pt_min_b) {
+	    pt_min_b = gdau->pt();
+	  }
+	  if (reco::deltaR(*gdau, jet.p4()) > dR_max_b) {
+	    dR_max_b = reco::deltaR(*gdau, jet.p4());
 	  }
 	}
       }
       // use info from the two b to fill in the tlorentz vector of a. use idau 
-      aa[idau] = bb[0] + bb[1];
+      aVec[idau] = bVec[idau] + bbarVec[idau];
     }
-    H = aa[0] + aa[1];
+    H = aVec[0] + aVec[1];
+    // "min" is b-bbar or b(bar)-b(bar) pair with minimum invariant mass
+    // "max" is the invariant mass of the other b-bbar or b(bar)-b(bar) pair
+    mass_bbbar_min = ( mass_bbbar_min < aVec[0].M() ? mass_bbbar_min : aVec[0].M() );
+    mass_bbbar_max = ( mass_bbbar_min < aVec[0].M() ? mass_bbbar_max : aVec[1].M() );
+    mass_bbbar_min = ( mass_bbbar_min < aVec[1].M() ? mass_bbbar_min : aVec[1].M() );
+    mass_bbbar_max = ( mass_bbbar_min < aVec[1].M() ? mass_bbbar_max : aVec[0].M() );
+    mass_bbbar_min = ( mass_bbbar_min < (bVec[0]+bbarVec[1]).M() ? mass_bbbar_min : (bVec[0]+bbarVec[1]).M() );
+    mass_bbbar_max = ( mass_bbbar_min < (bVec[0]+bbarVec[1]).M() ? mass_bbbar_max : (bVec[1]+bbarVec[0]).M() );
+    mass_bbbar_min = ( mass_bbbar_min < (bVec[1]+bbarVec[0]).M() ? mass_bbbar_min : (bVec[1]+bbarVec[0]).M() );
+    mass_bbbar_max = ( mass_bbbar_min < (bVec[1]+bbarVec[0]).M() ? mass_bbbar_max : (bVec[0]+bbarVec[1]).M() );
+    mass_bb_min = ( mass_bbbar_min < (bVec[0]+bVec[1]).M() ? mass_bbbar_min : (bVec[0]+bVec[1]).M() );
+    mass_bb_max = ( mass_bbbar_min < (bVec[0]+bVec[1]).M() ? mass_bbbar_max : (bbarVec[0]+bbarVec[1]).M() );
+    mass_bb_min = ( mass_bb_min < (bbarVec[0]+bbarVec[1]).M() ? mass_bb_min : (bbarVec[0]+bbarVec[1]).M() );
+    mass_bb_max = ( mass_bb_min < (bbarVec[0]+bbarVec[1]).M() ? mass_bb_max : (bVec[0]+bVec[1]).M() );
   }
 
-
   // bigger mass is a1, smaller mass is a2 
-  double a1 = ( aa[0].M() > aa[1].M() ) ? aa[0].M():aa[1].M(); 
-  double a2 = ( aa[0].M() < aa[1].M() ) ? aa[0].M():aa[1].M();
+  double a1 = ( aVec[0].M() > aVec[1].M() ) ? aVec[0].M():aVec[1].M();
+  double a2 = ( aVec[0].M() < aVec[1].M() ) ? aVec[0].M():aVec[1].M();
   data.fill<float>("fj_gen_H_aa_bbbb_mass_a1", a1);
   data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", a2);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_min", mass_bb_min);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_max", mass_bb_max);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_min", mass_bbbar_min);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_max", mass_bbbar_max);
 
-  data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", H_aa_bbbb_dR_max_b);
-  data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", H_aa_bbbb_pt_min_b);
+  data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", dR_max_b);
+  data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", pt_min_b);
   data.fill<float>("fj_gen_H_aa_bbbb_mass_H_calc", H.M());
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", H_aa_bbbb_mass_H);
+  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", mass_H);
 
-  // gen-matched particle (top/W/etc.)
+  // gen-matched particle (top/W/etc.) WARNING: only has one top from ttbar events! - AWB 2024.03.26
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
   data.fill<float>("fj_gen_eta", fjlabel.second ? fjlabel.second->eta() : -999);
   data.fill<float>("fj_gen_mass", (fjlabel.first < FatJetMatching::QCD_all && fjlabel.second) ? fjlabel.second->mass() : 0);

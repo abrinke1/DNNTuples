@@ -48,11 +48,18 @@ public:
 
   enum FatJetLabel {
     Invalid=0,
-    Top_all=10, Top_bcq, Top_bqq, Top_bc, Top_bq, Top_bele, Top_bmu, Top_btau,
-    W_all=20, W_cq, W_qq,
-    Z_all=30, Z_bb, Z_cc, Z_qq,
-    H_all=40, H_bb, H_cc, H_qq, H_qqqq, H_tautau, H_aa_bbbb, H_aa_other,
-    QCD_all=50, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others, QCD_BGen, QCD_bEnr, QCD_Incl
+    TT_all=10, TT_bl_bl, TT_bl_l, TT_l_l, TT_bl_bqq, TT_l_bqq, TT_bqq_bqq,
+               TT_bl_qq, TT_l_qq, TT_bqq_qq, TT_qq_qq,
+               TT_bl_bq, TT_l_bq, TT_bqq_bq, TT_qq_bq, TT_bq_bq,
+               TT_bl_b, TT_l_b, TT_bqq_b, TT_qq_b, TT_bq_b, TT_b_b,
+               TT_bl_q, TT_l_q, TT_bqq_q, TT_qq_q, TT_bq_q, TT_b_q, TT_q_q,
+               TT_bl, TT_l, TT_bqq, TT_qq, TT_bq, TT_b, TT_q, TT_ISR,
+    Top_all=50, Top_bcq, Top_bqq, Top_bc, Top_bq, Top_btauH, Top_bele, Top_bmu, Top_btauL,
+                Top_b, Top_tauH, Top_ele, Top_mu, Top_tauL, Top_ISR,
+    W_all=70, W_cq, W_qq, W_c, W_q, W_ISR,
+    Z_all=80, Z_bb, Z_cc, Z_qq, Z_b, Z_c, Z_q, Z_ISR,
+    H_all=90, H_bb, H_cc, H_qq, H_qqqq, H_tautau, H_aa_bbbb, H_aa_other,
+    QCD_all=100, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others, QCD_BGen, QCD_bEnr, QCD_Incl
   };
 
 public:
@@ -66,6 +73,7 @@ public:
   std::pair<FatJetLabel, const reco::GenParticle*> flavorLabel(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR);
 
 private:
+  std::pair<FatJetLabel, const reco::GenParticle*> ttbar_label(const pat::Jet *jet, const reco::GenParticle *partonA, const reco::GenParticle *partonB, double distR);
   std::pair<FatJetLabel, const reco::GenParticle*> top_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
   std::pair<FatJetLabel, const reco::GenParticle*> w_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
   std::pair<FatJetLabel, const reco::GenParticle*> z_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
