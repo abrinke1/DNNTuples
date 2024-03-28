@@ -121,6 +121,9 @@ print('Using global tag', process.GlobalTag.globaltag)
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
+## Only keep mass-decorrelated tagger values
+pfDeepBoostedJetTagsMD = [tg for tg in pfDeepBoostedJetTagsAll if 'MassDecorrelated' in tg]
+pfParticleNetJetTagsMD = [tg for tg in pfParticleNetJetTagsAll if 'MassDecorrelated' in tg]
 
 # !!! set `useReclusteredJets = True ` if you need to recluster jets (e.g., to adopt a new Puppi tune) !!!
 useReclusteredJets = False
@@ -156,7 +159,7 @@ if useReclusteredJets:
         jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
+        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsMD + pfParticleNetJetTagsMD,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
@@ -225,7 +228,7 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
+process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsMD + pfParticleNetJetTagsMD
 process.deepntuplizer.jetPtMin = 170
 process.deepntuplizer.jetMassMin = 50
 process.deepntuplizer.jetAvgXbbMin = 0.2
