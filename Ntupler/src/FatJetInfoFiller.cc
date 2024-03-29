@@ -165,14 +165,37 @@ void FatJetInfoFiller::book() {
   // specific gen info for H --> aa --> bbbb decay
   data.add<float>("fj_gen_H_aa_bbbb_mass_a1", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_mass_a2", -1.0);
-  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_min", -1.0);
-  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_max", -1.0);
-  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_min", -1.0);
-  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_max", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_mass_a2", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_mass_a1", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_mass_a2", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_mass_a1", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_dR_a2", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bb_dR_a1", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_dR_a2", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_mass_bbbar_dR_a1", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_dR_max_b", -0.1);
-  data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", 9999);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_min_b", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_mass_H", -1.0);
   data.add<float>("fj_gen_H_aa_bbbb_mass_H_calc", -1.0);
+
+  data.add<float>("fj_gen_H_aa_bbbb_pt_a1", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_a2", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_b11", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_b12", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_b21", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_pt_b22", -1.0);
+  data.add<float>("fj_gen_H_aa_bbbb_eta_a1", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_eta_a2", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_eta_b11", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_eta_b12", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_eta_b21", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_eta_b22", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_phi_a1", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_phi_a2", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_phi_b11", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_phi_b12", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_phi_b21", 999);
+  data.add<float>("fj_gen_H_aa_bbbb_phi_b22", 999);
 
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
@@ -396,25 +419,28 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // matching code taken from FatJetHelpers/src/FatJetMatching.cc
   double dR_max_b  = -0.1;
   double pt_min_b  = 9999;
-  double mass_H    = 9999;
-  double mass_bb_min = 9999;
-  double mass_bb_max = 9999;
-  double mass_bbbar_min = 9999;
-  double mass_bbbar_max = 9999;
+  double mass_H    = -1.0;
+  double mass_bb_mass_a2 = 9999;
+  double mass_bb_mass_a1 = 9999;
+  double mass_bbbar_mass_a2 = 9999;
+  double mass_bbbar_mass_a1 = 9999;
+  double dR_bb_min = 9999;
+  double mass_bb_dR_a2 = 9999;
+  double mass_bb_dR_a1 = 9999;
+  double dR_bbbar_min = 9999;
+  double mass_bbbar_dR_a2 = 9999;
+  double mass_bbbar_dR_a1 = 9999;
 
   // declare the tlozentz vectors of the b, then the a, and H 
   // initialize the a vectors to 0 
   ROOT::Math::PtEtaPhiMVector bVec[2];    // b quarks from a boson decays
   ROOT::Math::PtEtaPhiMVector bbarVec[2]; // anti-b quarks from a boson decays
   ROOT::Math::PtEtaPhiMVector aVec[2];    // a bosons from b-bbar pairs
-  ROOT::Math::PtEtaPhiMVector H(0,0,0,0); // Higgs constructed from a bosons
-  for (uint jj=0; jj < 2; jj++) {
-    bVec[jj].SetCoordinates(-1,-1,-1,-1);
-    bbarVec[jj].SetCoordinates(-1,-1,-1,-1);
-    aVec[jj].SetCoordinates(-1,-1,-1,-1);
-  }
+  ROOT::Math::PtEtaPhiMVector Higgs;      // Higgs constructed from a bosons
+  ROOT::Math::PtEtaPhiMVector tmpVec;     // Temporary 4-vector for swapping values
   
-  if ((fjlabel.first == FatJetMatching::H_aa_bbbb || fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second) {
+  if ( (fjlabel.first == FatJetMatching::H_aa_bbbb ||
+	fjlabel.first == FatJetMatching::H_aa_other) && fjlabel.second ) {
     mass_H = fjlabel.second->mass();
     for (unsigned idau=0; idau<fjlabel.second->numberOfDaughters(); ++idau){
       const auto *dau = dynamic_cast<const reco::GenParticle*>(fjlabel.second->daughter(idau));
@@ -440,37 +466,103 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       // use info from the two b to fill in the tlorentz vector of a. use idau 
       aVec[idau] = bVec[idau] + bbarVec[idau];
     }
-    H = aVec[0] + aVec[1];
-    // "min" is b-bbar or b(bar)-b(bar) pair with minimum invariant mass
-    // "max" is the invariant mass of the other b-bbar or b(bar)-b(bar) pair
-    mass_bbbar_min = ( mass_bbbar_min < aVec[0].M() ? mass_bbbar_min : aVec[0].M() );
-    mass_bbbar_max = ( mass_bbbar_min < aVec[0].M() ? mass_bbbar_max : aVec[1].M() );
-    mass_bbbar_min = ( mass_bbbar_min < aVec[1].M() ? mass_bbbar_min : aVec[1].M() );
-    mass_bbbar_max = ( mass_bbbar_min < aVec[1].M() ? mass_bbbar_max : aVec[0].M() );
-    mass_bbbar_min = ( mass_bbbar_min < (bVec[0]+bbarVec[1]).M() ? mass_bbbar_min : (bVec[0]+bbarVec[1]).M() );
-    mass_bbbar_max = ( mass_bbbar_min < (bVec[0]+bbarVec[1]).M() ? mass_bbbar_max : (bVec[1]+bbarVec[0]).M() );
-    mass_bbbar_min = ( mass_bbbar_min < (bVec[1]+bbarVec[0]).M() ? mass_bbbar_min : (bVec[1]+bbarVec[0]).M() );
-    mass_bbbar_max = ( mass_bbbar_min < (bVec[1]+bbarVec[0]).M() ? mass_bbbar_max : (bVec[0]+bbarVec[1]).M() );
-    mass_bb_min = ( mass_bbbar_min < (bVec[0]+bVec[1]).M() ? mass_bbbar_min : (bVec[0]+bVec[1]).M() );
-    mass_bb_max = ( mass_bbbar_min < (bVec[0]+bVec[1]).M() ? mass_bbbar_max : (bbarVec[0]+bbarVec[1]).M() );
-    mass_bb_min = ( mass_bb_min < (bbarVec[0]+bbarVec[1]).M() ? mass_bb_min : (bbarVec[0]+bbarVec[1]).M() );
-    mass_bb_max = ( mass_bb_min < (bbarVec[0]+bbarVec[1]).M() ? mass_bb_max : (bVec[0]+bVec[1]).M() );
-  }
+    Higgs = aVec[0] + aVec[1];
 
-  // bigger mass is a1, smaller mass is a2 
-  double a1 = ( aVec[0].M() > aVec[1].M() ) ? aVec[0].M():aVec[1].M();
-  double a2 = ( aVec[0].M() < aVec[1].M() ) ? aVec[0].M():aVec[1].M();
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a1", a1);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", a2);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_min", mass_bb_min);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_max", mass_bb_max);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_min", mass_bbbar_min);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_max", mass_bbbar_max);
+    // Swap a1 and a2 if mass(a2) is more than 2% larger than mass(a1)
+    // or if they have the same mass and pT(a2) > pT(a1)
+    bool mass_diff = (abs((aVec[1].M() - aVec[0].M()) / (aVec[1].M() + aVec[0].M())) > 0.01);
+    if ( (     mass_diff  && (aVec[1].M()  > aVec[0].M())  ) ||
+	 ((not mass_diff) && (aVec[1].Pt() > aVec[0].Pt()) ) ) {
+      tmpVec = aVec[0];
+      aVec[0] = aVec[1];
+      aVec[1] = tmpVec;
+      tmpVec = bVec[0];
+      bVec[0] = bVec[1];
+      bVec[1] = tmpVec;
+      tmpVec = bbarVec[0];
+      bbarVec[0] = bbarVec[1];
+      bbarVec[1] = tmpVec;
+    }
 
-  data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", dR_max_b);
-  data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", pt_min_b);
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_H_calc", H.M());
-  data.fill<float>("fj_gen_H_aa_bbbb_mass_H", mass_H);
+    // "a2" is b-bbar or b(bar)-b(bar) pair with minimum invariant mass or minimum dR separation
+    // "a1" is the invariant mass of the other b-bbar or b(bar)-b(bar) pair
+    for (uint i1=0; i1<2; i1++) {
+      for (uint i2=0; i2<2; i2++) {
+	uint j1 = (i1 == 0 ? 1 : 0);
+	uint j2 = (i2 == 0 ? 1 : 0);
+	if (mass_bbbar_mass_a2 > (bVec[i1]+bbarVec[i2]).M()) {
+	  mass_bbbar_mass_a2   = (bVec[i1]+bbarVec[i2]).M();
+	  mass_bbbar_mass_a1   = (bVec[j1]+bbarVec[j2]).M();
+	}
+	if (dR_bbbar_min > reco::deltaR(bVec[i1], bbarVec[i2])) {
+	  dR_bbbar_min   = reco::deltaR(bVec[i1], bbarVec[i2]);
+	  mass_bbbar_dR_a2 = (bVec[i1]+bbarVec[i2]).M();
+	  mass_bbbar_dR_a1 = (bVec[j1]+bbarVec[j2]).M();
+	}
+	if (mass_bb_mass_a2 > mass_bbbar_mass_a2) {
+	  mass_bb_mass_a2   = mass_bbbar_mass_a2;
+	  mass_bb_mass_a1   = mass_bbbar_mass_a1;
+	}
+	if (dR_bb_min > dR_bbbar_min) {
+	  dR_bb_min   = dR_bbbar_min;
+	  mass_bb_dR_a2 = mass_bbbar_dR_a2;
+	  mass_bb_dR_a1 = mass_bbbar_dR_a1;
+	}
+      }
+    }
+    if (mass_bb_mass_a2 > (bVec[0]+bVec[1]).M()) {
+      mass_bb_mass_a2   = (bVec[0]+bVec[1]).M();
+      mass_bb_mass_a1   = (bbarVec[0]+bbarVec[1]).M();
+    }
+    if (mass_bb_mass_a2 > (bbarVec[0]+bbarVec[1]).M()) {
+      mass_bb_mass_a2   = (bbarVec[0]+bbarVec[1]).M();
+      mass_bb_mass_a1   = (bVec[0]+bVec[1]).M();
+    }
+    if (dR_bb_min > reco::deltaR(bVec[0], bVec[1])) {
+      dR_bb_min   = reco::deltaR(bVec[0], bVec[1]);
+      mass_bb_dR_a2 = (bVec[0]+bVec[1]).M();
+      mass_bb_dR_a1 = (bbarVec[0]+bbarVec[1]).M();
+    }
+    if (dR_bb_min > reco::deltaR(bbarVec[0], bbarVec[1])) {
+      dR_bb_min   = reco::deltaR(bbarVec[0], bbarVec[1]);
+      mass_bb_dR_a2 = (bbarVec[0]+bbarVec[1]).M();
+      mass_bb_dR_a1 = (bVec[0]+bVec[1]).M();
+    }
+
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_a1", aVec[0].M());
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_a2", aVec[1].M());
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_mass_a2", mass_bb_mass_a2);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_mass_a1", mass_bb_mass_a1);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_mass_a2", mass_bbbar_mass_a2);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_mass_a1", mass_bbbar_mass_a1);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_dR_a2", mass_bb_dR_a2);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bb_dR_a1", mass_bb_dR_a1);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_dR_a2", mass_bbbar_dR_a2);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_bbbar_dR_a1", mass_bbbar_dR_a1);
+    data.fill<float>("fj_gen_H_aa_bbbb_dR_max_b", dR_max_b);
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_min_b", pt_min_b);
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_H_calc", Higgs.M());
+    data.fill<float>("fj_gen_H_aa_bbbb_mass_H", mass_H);
+
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_a1",  aVec[0].Pt());
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_a2",  aVec[1].Pt());
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_b11", bVec[0].Pt());
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_b12", bbarVec[0].Pt());
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_b21", bVec[1].Pt());
+    data.fill<float>("fj_gen_H_aa_bbbb_pt_b22", bbarVec[1].Pt());
+    data.fill<float>("fj_gen_H_aa_bbbb_eta_a1",  aVec[0].Eta()    - Higgs.Eta());
+    data.fill<float>("fj_gen_H_aa_bbbb_eta_a2",  aVec[1].Eta()    - Higgs.Eta());
+    data.fill<float>("fj_gen_H_aa_bbbb_eta_b11", bVec[0].Eta()    - Higgs.Eta());
+    data.fill<float>("fj_gen_H_aa_bbbb_eta_b12", bbarVec[0].Eta() - Higgs.Eta());
+    data.fill<float>("fj_gen_H_aa_bbbb_eta_b21", bVec[1].Eta()    - Higgs.Eta());
+    data.fill<float>("fj_gen_H_aa_bbbb_eta_b22", bbarVec[1].Eta() - Higgs.Eta()); // (targetAngle - myAngle + 540) % 360 - 180;
+    data.fill<float>("fj_gen_H_aa_bbbb_phi_a1",  fmod(aVec[0].Phi() - Higgs.Phi() + 3*Geom::pi(), 2*Geom::pi()) - Geom::pi());
+    data.fill<float>("fj_gen_H_aa_bbbb_phi_a2",  fmod(aVec[1].Phi() - Higgs.Phi() + 3*Geom::pi(), 2*Geom::pi()) - Geom::pi());
+    data.fill<float>("fj_gen_H_aa_bbbb_phi_b11", fmod(bVec[0].Phi()    - Higgs.Phi() + 3*Geom::pi(), 2*Geom::pi()) - Geom::pi());
+    data.fill<float>("fj_gen_H_aa_bbbb_phi_b12", fmod(bbarVec[0].Phi() - Higgs.Phi() + 3*Geom::pi(), 2*Geom::pi()) - Geom::pi());
+    data.fill<float>("fj_gen_H_aa_bbbb_phi_b21", fmod(bVec[1].Phi()    - Higgs.Phi() + 3*Geom::pi(), 2*Geom::pi()) - Geom::pi());
+    data.fill<float>("fj_gen_H_aa_bbbb_phi_b22", fmod(bbarVec[1].Phi() - Higgs.Phi() + 3*Geom::pi(), 2*Geom::pi()) - Geom::pi());
+  } // End conditional: if ( (fjlabel.first == FatJetMatching::H_aa_bbbb || ...
 
   // gen-matched particle (top/W/etc.) WARNING: only has one top from ttbar events! - AWB 2024.03.26
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
