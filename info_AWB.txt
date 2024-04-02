@@ -26,6 +26,8 @@ cd Ntupler/
 cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=HToAATo4B_GluGluH_01J_Pt150_M-20 maxEvents=1000
 ## Submit jobs to qsub on Kodiak
 ./scripts/submitDeepNtuplizer.sh
+## Check status
+qstat -u abrinke1
 ## After jobs are done and you've checked output
 ./scripts/hadd.sh
 

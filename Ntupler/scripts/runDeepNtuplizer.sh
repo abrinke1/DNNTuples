@@ -14,6 +14,8 @@ voms-proxy-info
 
 ## Run the script!
 echo ""
-echo "cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=$1 maxEvents=$2 fileIndex=$3"
+# echo "cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=$1 maxEvents=$2 fileIndex=$3"
+echo "cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=$1 maxEvents=$2 partNum=$3 numParts=$4"
 echo ""
-cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=$1 maxEvents=$2 fileIndex=$3
+# cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=$1 maxEvents=$2 fileIndex=$3
+cmsRun test/Hto4b_DeepNtuplizerAK8.py inputDataset=$1 maxEvents=$2 partNum=$3 numParts=$4

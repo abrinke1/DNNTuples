@@ -44,14 +44,13 @@ void FatJetInfoFiller::book() {
   data.add<int>("fj_isH", 0);
   data.add<int>("fj_isISR", 0);
   data.add<int>("fj_isQCD", 0);
-  data.add<int>("fj_isNonRes", 0);
+  data.add<int>("fj_isNR", 0);
 
   // Non-resonant final states from ttbar, top, W, or Z
   data.add<int>("label_NR_LF",  0);
   data.add<int>("label_NR_b",   0);
   data.add<int>("label_NR_bb",  0);
   data.add<int>("label_NR_lep", 0);
-  data.add<int>("label_NR_ll",  0);
 
   // "TT" includes all AK8 jets from ttbar events
   // "l" includes electrons or muons from W or W --> tau decays
@@ -316,16 +315,14 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 		       fjlabel.first == FatJetMatching::TT_l_b  || fjlabel.first == FatJetMatching::TT_bl_b ||
 		       fjlabel.first == FatJetMatching::TT_l_bq || fjlabel.first == FatJetMatching::TT_bl_bq ||
 		       fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu ||
-		       fjlabel.first == FatJetMatching::Top_btauH);
-  int _label_NR_ll =  (fjlabel.first == FatJetMatching::TT_l_l || fjlabel.first == FatJetMatching::TT_bl_l ||
-		       fjlabel.first == FatJetMatching::TT_bl_bl);
+		       fjlabel.first == FatJetMatching::Top_btauH || fjlabel.first == FatJetMatching::TT_l_l ||
+		       fjlabel.first == FatJetMatching::TT_bl_l || fjlabel.first == FatJetMatching::TT_bl_bl);
 
-  data.fill<int>("fj_isNonRes", _label_NR_LF+_label_NR_b+_label_NR_bb+_label_NR_lep);
+  data.fill<int>("fj_isNR", _label_NR_LF+_label_NR_b+_label_NR_bb+_label_NR_lep);
   data.fill<int>("label_NR_LF",  _label_NR_LF);
   data.fill<int>("label_NR_b",   _label_NR_b);
   data.fill<int>("label_NR_bb",  _label_NR_bb);
   data.fill<int>("label_NR_lep", _label_NR_lep);
-  data.fill<int>("label_NR_ll",  _label_NR_ll);
 
   data.fill<int>("label_TT_ISR",     fjlabel.first == FatJetMatching::TT_ISR);
   data.fill<int>("label_TT_q",       fjlabel.first == FatJetMatching::TT_q);

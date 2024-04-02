@@ -6,7 +6,7 @@ import math
 # ---------------------------------------------------------
 from FWCore.ParameterSet.VarParsing import VarParsing
 
-print '\nRunning Hto4b_DeepNtuplizerAK8.py'
+print('\nRunning Hto4b_DeepNtuplizerAK8.py')
 
 options = VarParsing('analysis')
 
@@ -15,25 +15,69 @@ options.register('inputDataset', '', VarParsing.multiplicity.singleton, VarParsi
 options.register('isTrainSample', True, VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool, "if the sample is used for training")
 options.register('fileIndex', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "Single file index")
+options.register('partNum', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "Which partial set of files")
+options.register('numParts', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "How many partial sets")
 
 options.parseArguments()
 
+list_kodiak = os.getcwd()+'/test/lists/2018/kodiak/'+options.inputDataset+'.txt'
+list_xrootd = os.getcwd()+'/test/lists/2018/xrootd/'+options.inputDataset+'.txt'
+if os.path.isfile(list_kodiak):
+    list_file_name = list_kodiak
+    print('\nRunning over files from kodiak in:')
+elif os.path.isfile(list_xrootd):
+    list_file_name = list_xrootd
+    print('\nRunning over files from xrootd in:')
+else:
+    print('\n*** ERROR!!! Input file list does not exist! Quitting.')
+    print(list_kodiak)
+    print(list_xrootd)
+    open('DoesNotExist')
+print(list_file_name)
+
 in_file_list = []
-with open(os.getcwd()+'/test/lists/'+options.inputDataset+'.txt') as list_file:
+with open(list_file_name) as list_file:
     in_file_list = [f for f in list_file.read().splitlines() if not f.startswith('#')]
-print '\nGot %d input files from %s' % (len(in_file_list), 'test/lists/'+options.inputDataset+'.txt')
+print('Got %d input files' % len(in_file_list))
 if options.fileIndex >= 0:
     in_file_list = [in_file_list[options.fileIndex]]
-    print '\nWill only run on file %d:' % options.fileIndex
-    print in_file_list[0]
+    print('\nWill only run on file %d:' % options.fileIndex)
+    print(in_file_list[0])
+elif options.partNum >= 0 and options.numParts >= 0:
+    if options.partNum >= options.numParts:
+        print('\nERROR!!! partNum = %d >= numParts = %d! Quitting.' % (options.partNum, options.numParts))
+        assert(options.partNum < options.numParts)
+    if options.numParts > len(in_file_list):
+        print('\nERROR!!! numParts = %d > # of files = %d! Quitting.' % (options.numParts, len(in_file_list)))
+        assert(options.numParts <= len(in_file_list))
+    part_file_list = []
+    for ii in range(len(in_file_list)):
+        if (ii % options.numParts) == options.partNum:
+            part_file_list.append(in_file_list[ii])
+    in_file_list = part_file_list
+    print('\nWill only run on files %d out of %d:' % (options.partNum, options.numParts))
+    print(in_file_list)
 
 options.inputFiles = in_file_list
 
-out_dir = os.getcwd()+'/output/'
-# out_dir = '/home/chosila/Projects/CMSSW_10_6_32/src/DeepNTuples/Ntuples/'
+if options.maxEvents >= 0:
+    out_dir = os.getcwd()+'/output/'
+else:
+    out_dir = '/cms/data/store/user/abrinke1/Trees/HtoAAto4B/ParticleNet/Ntuples/2024_04_01/'
+    # out_dir = '/home/chosila/Projects/CMSSW_10_6_32/src/DeepNTuples/Ntuples/'
 out_str = out_dir+'AK8_'+options.inputDataset
 if options.fileIndex >= 0:
     out_str += ('_file_%03d' % options.fileIndex)
+elif options.partNum >= 0 and options.numParts >= 0:
+    if options.numParts <= 10:
+        out_str += ('_part_%01d_%01d' % (options.partNum, options.numParts))
+    elif options.numParts <= 100:
+        out_str += ('_part_%02d_%02d' % (options.partNum, options.numParts))
+    elif options.numParts <= 1000:
+        out_str += ('_part_%03d_%03d' % (options.partNum, options.numParts))
+    else:
+        print('\nERROR!!! Are you crazy??? numParts = %d > 1000! Quitting.' % (options.numParts))
+        assert(options.numParts <= 1000)
 options.outputFile = out_str+'.root'
 
 globalTagMap = {
@@ -54,7 +98,7 @@ if options.maxEvents < 1:
     printEvent = 5000
 else:
     printEvent = min(5000, int(math.sqrt(options.maxEvents*10)))
-print '\nWill process up to %d events, report every %d' % (options.maxEvents, printEvent)
+print('\nWill process up to %d events, report every %d' % (options.maxEvents, printEvent))
 process.MessageLogger.cerr.FwkReport.reportEvery = printEvent
 
 process.options = cms.untracked.PSet(
@@ -121,9 +165,9 @@ print('Using global tag', process.GlobalTag.globaltag)
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
-## Only keep mass-decorrelated tagger values
-pfDeepBoostedJetTagsMD = [tg for tg in pfDeepBoostedJetTagsAll if 'MassDecorrelated' in tg]
-pfParticleNetJetTagsMD = [tg for tg in pfParticleNetJetTagsAll if 'MassDecorrelated' in tg]
+# ## Only keep mass-decorrelated tagger values
+# pfDeepBoostedJetTagsMD = [tg for tg in pfDeepBoostedJetTagsAll if 'MassDecorrelated' in tg]
+# pfParticleNetJetTagsMD = [tg for tg in pfParticleNetJetTagsAll if 'MassDecorrelated' in tg]
 
 # !!! set `useReclusteredJets = True ` if you need to recluster jets (e.g., to adopt a new Puppi tune) !!!
 useReclusteredJets = False
@@ -132,13 +176,6 @@ jetR = 0.8
 bTagDiscriminators = [
     'pfCombinedInclusiveSecondaryVertexV2BJetTags',
     'pfBoostedDoubleSecondaryVertexAK8BJetTags',
-    # 'pfDeepDoubleBvLJetTags:probHbb',
-    # 'pfDeepDoubleCvLJetTags:probHcc',
-    # 'pfDeepDoubleCvBJetTags:probHcc',
-    # 'pfMassIndependentDeepDoubleBvLJetTags:probHbb',
-    # 'pfMassIndependentDeepDoubleCvLJetTags:probHcc',
-    # 'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
-
     'pfParticleNetMassRegressionJetTags:mass',
 ]
 
@@ -159,7 +196,7 @@ if useReclusteredJets:
         jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsMD + pfParticleNetJetTagsMD,
+        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
@@ -228,7 +265,7 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsMD + pfParticleNetJetTagsMD
+process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
 process.deepntuplizer.jetPtMin = 170
 process.deepntuplizer.jetMassMin = 50
 process.deepntuplizer.jetAvgXbbMin = 0.2
@@ -250,9 +287,9 @@ elif isHto4b:
 elif isData:
     process.deepntuplizer.sampleType = 'data'
 
-print '\nisQCDSample = %s, sampleType = %s, minLheHT = %s\n' % (str(process.deepntuplizer.isQCDSample),
+print('\nisQCDSample = %s, sampleType = %s, minLheHT = %s\n' % (str(process.deepntuplizer.isQCDSample),
                                                                 process.deepntuplizer.sampleType,
-                                                                process.deepntuplizer.minLheHT)
+                                                                process.deepntuplizer.minLheHT))
 
 process.deepntuplizer.isPythia = 'pythia' in options.inputDataset.lower()
 process.deepntuplizer.isHerwig = 'herwig' in options.inputDataset.lower()
