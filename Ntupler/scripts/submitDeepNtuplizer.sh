@@ -23,8 +23,8 @@ echo ""
 #     nparts=5
 #     for (( part=0; part<$nparts; part++ ))
 #     do
-#     	echo "qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs"
-#     	qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs
+#     	echo "qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs"
+#     	qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs
 #     done
 # done
 
@@ -38,8 +38,8 @@ echo ""
 # 	nparts=5
 # 	for (( part=0; part<$nparts; part++ ))
 # 	do
-#     	    echo "qsub -N HToAATo4B_GluGluH_01J_Pt${Pt}_mH-70_mA-12_wH-70_wA-${wA} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs"
-#     	    qsub -N HToAATo4B_GluGluH_01J_Pt${Pt}_mH-70_mA-12_wH-70_wA-${wA} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs
+#     	    echo "qsub -N HToAATo4B_GluGluH_01J_Pt${Pt}_mH-70_mA-12_wH-70_wA-${wA} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs"
+#     	    qsub -N HToAATo4B_GluGluH_01J_Pt${Pt}_mH-70_mA-12_wH-70_wA-${wA} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs
 # 	done
 #     done
 # done
@@ -58,27 +58,40 @@ echo ""
 # 	fi
 # 	for (( part=0; part<$nparts; part++ ))
 # 	do
-# 	    echo "qsub -N QCD_${qcd}_HT${ht} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs"
-# 	    qsub -N QCD_${qcd}_HT${ht} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs
+# 	    echo "qsub -N QCD_${qcd}_HT${ht} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs"
+# 	    qsub -N QCD_${qcd}_HT${ht} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs
 # 	done
-# 	# for (( line=0; line<$nlines; line++ ))
-# 	# do
-# 	#     echo "qsub -N QCD_${qcd}_HT${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizer.pbs"
-# 	#     qsub -N QCD_${qcd}_HT${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizer.pbs
-# 	# done
 #     done
 # done
 
 
-## ttbar Powheg (high stats), 500 jobs per decay mode
-for decay in Hadronic SemiLep 2L2Nu
+# ## ttbar Powheg (high stats), 1000 jobs per decay mode
+# for decay in Hadronic SemiLep 2L2Nu
+# do
+#     nlines=`wc --lines < test/lists/2018/xrootd/TTTo${decay}.txt`
+#     nparts=1000
+#     for (( part=0; part<$nparts; part++ ))
+#     do
+# 	echo "qsub -N TTTo${decay} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs"
+# 	qsub -N TTTo${decay} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs
+#     done
+# done
+
+
+## ttbar Powheg recovery jobs by file
+for decay in Hadronic
 do
+    idx=139
     nlines=`wc --lines < test/lists/2018/xrootd/TTTo${decay}.txt`
-    nparts=500
-    for (( part=0; part<$nparts; part++ ))
+    nparts=200
+    echo $idx
+    echo $nlines
+    echo $nparts
+    echo $((nlines / nparts))
+    for (( line=0; line<=$((nlines / nparts)); line++ ))
     do
-	echo "qsub -N TTTo${decay} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs"
-	qsub -N TTTo${decay} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizer.pbs
+	echo "qsub -N TTTo${decay} -v NEVT=-1,IFILE=$((idx + (line * nparts)))  scripts/runDeepNtuplizerFile.pbs"
+	qsub -N TTTo${decay} -v NEVT=-1,IFILE=$((idx + (line * nparts)))  scripts/runDeepNtuplizerFile.pbs
     done
 done
 
@@ -90,11 +103,12 @@ done
 # 	nlines=`wc --lines < test/lists/${ewk}_HT-${ht}.txt`
 # 	for (( line=0; line<$nlines; line++ ))
 # 	do
-# 	    echo "qsub -N ${ewk}_HT-${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizer.pbs"
-# 	    qsub -N ${ewk}_HT-${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizer.pbs
+# 	    echo "qsub -N ${ewk}_HT-${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizerFile.pbs"
+# 	    qsub -N ${ewk}_HT-${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizerFile.pbs
 # 	done
 #     done
 # done
+
 
 # # ## Gluon fusion H-->aa-->4b with same mass(a), 1 job per MiniAOD file (old approach)
 # # for mass in 12 15 20 25 30 35 40 45 50 55 60
@@ -102,7 +116,7 @@ done
 # #     nlines=`wc --lines < test/lists/2018/kodiak/HToAATo4B_GluGluH_01J_Pt150_M-${mass}.txt`
 # #     for (( line=0; line<$nlines; line++ ))
 # #     do
-# # 	echo "qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizer.pbs"
-# # 	qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizer.pbs
+# # 	echo "qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizerFile.pbs"
+# # 	qsub -N HToAATo4B_GluGluH_01J_Pt150_M-${mass} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizerFile.pbs
 # #     done
 # # done
