@@ -31,27 +31,24 @@ echo $PWD
 #     done
 # done
 
-# for decay in Hadronic SemiLep 2L2Nu
-for decay in 2L2Nu
-do
-    for part in 0 1 2 3 4 5 6 7 8 9
-    do
-	echo "hadd -f AK8_TTTo${decay}_part_${part}_10.root AK8_TTTo${decay}_part_*${part}_200.root"
-	hadd -f AK8_TTTo${decay}_part_${part}_10.root AK8_TTTo${decay}_part_*${part}_200.root
-    done
-done
-
-
-
-# for ewk in "ZJetsToQQ"
+# # for decay in Hadronic SemiLep 2L2Nu
+# for decay in 2L2Nu
 # do
-#     for ht in "800toInf"
+#     for part in 4 6
 #     do
-# 	echo "hadd -f AK8_${ewk}_HT-${ht}.root AK8_${ewk}_HT-${ht}_file*.root"
-# 	hadd -f AK8_${ewk}_HT-${ht}.root AK8_${ewk}_HT-${ht}_file*.root
-#         done
+# 	echo "hadd -f AK8_TTTo${decay}_part_${part}_10.root AK8_TTTo${decay}_part_*${part}_200.root"
+# 	hadd -f AK8_TTTo${decay}_part_${part}_10.root AK8_TTTo${decay}_part_*${part}_200.root
 #     done
 # done
+
+for ewk in "ZJetsToQQ"
+do
+    for ht in "200to400" "400to600" "600to800" "800toInf"
+    do
+	echo "hadd -f AK8_${ewk}_HT-${ht}.root AK8_${ewk}_HT-${ht}_part_*_100.root"
+	hadd -f AK8_${ewk}_HT-${ht}.root AK8_${ewk}_HT-${ht}_part_*_100.root
+    done
+done
 
 echo $PWD
 cd -

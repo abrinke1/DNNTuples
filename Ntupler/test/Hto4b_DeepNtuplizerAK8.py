@@ -274,6 +274,8 @@ process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
 
 isQCD = ('/QCD_' in options.inputDataset or 'QCD_' in options.inputFiles[0])
+isZToQQ = ('ZJetsToQQ_HT' in options.inputFiles[0])
+isWToQQ = ('WJetsToQQ_HT' in options.inputFiles[0])
 isHto4b = ('HToAATo4B_' in options.inputDataset or 'HToAATo4B_' in options.inputFiles[0])
 isData = ('JetHT' in options.inputDataset)
 process.deepntuplizer.isQCDSample = isQCD
@@ -281,11 +283,17 @@ if isQCD:
     process.deepntuplizer.sampleType = ('QCD_BGen' if 'BGenFilter' in options.inputFiles[0] else \
                                         ('QCD_bEnr' if 'bEnriched' in options.inputFiles[0] else \
                                          'QCD_Incl') )
-    process.deepntuplizer.minLheHT = cms.double(int(options.inputFiles[0].split('_HT')[1].split('00to')[0]+'00'))
+elif isZToQQ:
+    process.deepntuplizer.sampleType = 'ZJetsToQQ'
+elif isWToQQ:
+    process.deepntuplizer.sampleType = 'WJetsToQQ'
 elif isHto4b:
     process.deepntuplizer.sampleType = ('H_aa_bbbb_'+options.inputFiles[0].split('_TuneCP5')[0][-4:])
 elif isData:
     process.deepntuplizer.sampleType = 'data'
+
+if isQCD or isZToQQ or isWToQQ:
+    process.deepntuplizer.minLheHT = cms.double(abs(int(options.inputFiles[0].split('_HT')[1].split('00to')[0]+'00')))
 
 print('\nisQCDSample = %s, sampleType = %s, minLheHT = %s\n' % (str(process.deepntuplizer.isQCDSample),
                                                                 process.deepntuplizer.sampleType,

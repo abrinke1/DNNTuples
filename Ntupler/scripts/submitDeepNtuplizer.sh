@@ -78,34 +78,41 @@ echo ""
 # done
 
 
-## ttbar Powheg recovery jobs by file
-for decay in Hadronic
+## W or Z to QQ, 100 jobs per HT range
+for ewk in "ZJetsToQQ"
 do
-    idx=139
-    nlines=`wc --lines < test/lists/2018/xrootd/TTTo${decay}.txt`
-    nparts=200
-    echo $idx
-    echo $nlines
-    echo $nparts
-    echo $((nlines / nparts))
-    for (( line=0; line<=$((nlines / nparts)); line++ ))
+    for ht in "200to400" "400to600" "600to800" "800toInf"
     do
-	echo "qsub -N TTTo${decay} -v NEVT=-1,IFILE=$((idx + (line * nparts)))  scripts/runDeepNtuplizerFile.pbs"
-	qsub -N TTTo${decay} -v NEVT=-1,IFILE=$((idx + (line * nparts)))  scripts/runDeepNtuplizerFile.pbs
+	nlines=`wc --lines < test/lists/2018/xrootd/${ewk}_HT-${ht}.txt`
+	echo "File test/lists/2018/xrootd/${ewk}_HT-${ht}.txt has ${nlines} lines"
+	nparts=100
+	if [ $nlines -lt $nparts ]
+	then
+	    nparts=$nlines
+	fi
+	for (( part=0; part<$nparts; part++ ))
+	do
+	    echo "qsub -N ${ewk}_HT-${ht} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs"
+	    qsub -N ${ewk}_HT-${ht} -v NEVT=-1,PARTNUM=${part},NPARTS=${nparts} scripts/runDeepNtuplizerPart.pbs
+	done
     done
 done
 
 
-# for ewk in "ZJetsToQQ"
+# ## ttbar Powheg recovery jobs by file
+# for decay in Hadronic
 # do
-#     for ht in "800toInf"
+#     idx=139
+#     nlines=`wc --lines < test/lists/2018/xrootd/TTTo${decay}.txt`
+#     nparts=200
+#     echo $idx
+#     echo $nlines
+#     echo $nparts
+#     echo $((nlines / nparts))
+#     for (( line=0; line<=$((nlines / nparts)); line++ ))
 #     do
-# 	nlines=`wc --lines < test/lists/${ewk}_HT-${ht}.txt`
-# 	for (( line=0; line<$nlines; line++ ))
-# 	do
-# 	    echo "qsub -N ${ewk}_HT-${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizerFile.pbs"
-# 	    qsub -N ${ewk}_HT-${ht} -v NEVT=-1,IFILE=${line} scripts/runDeepNtuplizerFile.pbs
-# 	done
+# 	echo "qsub -N TTTo${decay} -v NEVT=-1,IFILE=$((idx + (line * nparts)))  scripts/runDeepNtuplizerFile.pbs"
+# 	qsub -N TTTo${decay} -v NEVT=-1,IFILE=$((idx + (line * nparts)))  scripts/runDeepNtuplizerFile.pbs
 #     done
 # done
 
